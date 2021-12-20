@@ -2,7 +2,6 @@ package http
 
 import (
 	"bytes"
-	"core1/src/pkg/meowalien_lib/errs"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -70,7 +69,7 @@ func JsonRequest(endpoint string, req interface{}) ([]byte, error) {
 	client := &http.Client{}
 	res, err := client.Do(r)
 	if err != nil {
-		return nil, errs.WithLine(err)
+		return nil, fmt.Errorf("error when Do: %s", err.Error())
 	}
 
 	defer func(Body io.ReadCloser) {

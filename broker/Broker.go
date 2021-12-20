@@ -1,8 +1,8 @@
 package broker
 
 import (
-	"core1/src/pkg/meowalien_lib/uuid"
 	"fmt"
+	"github.com/meowalien/go-meowalien-lib/uuid"
 	"log"
 )
 

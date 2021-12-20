@@ -2,10 +2,10 @@ package db_connect
 
 import (
 	"context"
-	"core1/src/pkg/meowalien_lib/db/config_modules"
 	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v8"
+	"github.com/meowalien/go-meowalien-lib/db/config_modules"
 	"io"
 	"time"
 )

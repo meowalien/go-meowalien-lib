@@ -1,8 +1,9 @@
 package db_connect
 
 import (
-	"core1/src/pkg/meowalien_lib/db/config_modules"
+
 	"fmt"
+	"github.com/meowalien/go-meowalien-lib/db/config_modules"
 	"github.com/neo4j/neo4j-go-driver/neo4j"
 )
 

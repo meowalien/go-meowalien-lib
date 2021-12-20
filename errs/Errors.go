@@ -1,9 +1,9 @@
 package errs
 
 import (
-	"core1/src/pkg/meowalien_lib/runtime"
 	"errors"
 	"fmt"
+	"github.com/meowalien/go-meowalien-lib/runtime"
 	"go.uber.org/zap/buffer"
 )
 

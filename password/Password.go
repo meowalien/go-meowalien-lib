@@ -1,8 +1,8 @@
 package password
 
 import (
-	"core1/src/pkg/meowalien_lib/random"
 	"fmt"
+	"github.com/meowalien/go-meowalien-lib/random"
 	"go.uber.org/zap/buffer"
 	"golang.org/x/crypto/bcrypt"
 )

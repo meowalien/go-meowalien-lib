@@ -1,9 +1,9 @@
 package db_connect
 
 import (
-	"core1/src/pkg/meowalien_lib/db/config_modules"
 	"fmt"
 	"github.com/jmoiron/sqlx"
+	"github.com/meowalien/go-meowalien-lib/db/config_modules"
 )
 
 func CreateMysqlDBConnectionWithSQLX(dbconf config_modules.MysqlConnectConfiguration) (*sqlx.DB, error) {
