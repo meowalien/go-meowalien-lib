@@ -1,4 +1,4 @@
-package sqls
+package exec
 
 import (
 	"database/sql/driver"

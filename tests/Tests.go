@@ -3,10 +3,9 @@ package tests
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
+	"github.com/meowalien/go-meowalien-lib/errs"
 	"net/http"
 	"net/http/httptest"
-	"testing"
 )
 
 type HttpServeAble interface {
@@ -16,33 +15,31 @@ type HttpServeAble interface {
 type Request struct {
 	Router HttpServeAble
 	Method string
-	Path string
-	Body interface{}
+	Path     string
+	Body     interface{}
 	Response interface{}
 }
 
-func NewTestRequest(t *testing.T,req Request)  {
-
+func NewTestRequest(req Request) (httpCode int ,err error) {
 	bodyBytes , err := json.Marshal(req.Body)
-	if !assert.Nil(t, err) {
+	if err != nil {
+		err =errs.WithLine(err)
 		return
 	}
 
-	response, err := http.NewRequest(http.MethodPost, "/member/login", bytes.NewReader(bodyBytes))
-	if !assert.Nil(t, err) {
+	response, err := http.NewRequest(req.Method, req.Path, bytes.NewReader(bodyBytes))
+	if err != nil {
+		err= errs.WithLine(err)
 		return
 	}
-
 
 	recorder := httptest.NewRecorder()
-
 	req.Router.ServeHTTP(recorder, response)
-	//fmt.Println(recorder.Body.String())
-
-
 	err = json.NewDecoder(recorder.Body).Decode(req.Response)
-	if !assert.Nil(t, err){
+	if err != nil {
+		err= errs.WithLine(err)
 		return
 	}
-	//fmt.Println("mp: ",mp)
+	return recorder.Code , nil
 }
+

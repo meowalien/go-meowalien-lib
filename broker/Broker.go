@@ -6,6 +6,10 @@ import (
 	"log"
 )
 
+type Subscribable interface {
+	Subscribe() *Client
+}
+
 const DefaultChanSize = 1
 const DefaultSubscribeChanSize = 1
 const DefaultUnSubscribeChanSize = 1
@@ -118,7 +122,7 @@ func (b *broker) start() {
 						return
 					}
 					if bk.Filter() != nil && bk.Filter()(msg) {
-						bk.C <- msg
+						bk.c <- msg
 					}
 				}
 				threadLimiter <- struct{}{}
@@ -140,7 +144,7 @@ func (b *broker) Subscribe(filter Filter) *Client {
 	if !b.isActive {
 		panic("the broker is not active, please start it up.")
 	}
-	msgCh := &Client{C: make(chan interface{}, b.clientQueueSize), filter: filter, uuid: getUUID()}
+	msgCh := &Client{c: make(chan interface{}, b.clientQueueSize), filter: filter, uuid: getUUID()}
 	b.subscribeChan <- msgCh
 	return msgCh
 }

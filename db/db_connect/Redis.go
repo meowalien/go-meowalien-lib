@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/meowalien/go-meowalien-lib/db/config_modules"
-	"io"
+	"github.com/meowalien/go-meowalien-lib/exec"
 	"time"
 )
 
-func CreateRedisConnection(dbconf config_modules.RedisConfiguration) (ClientWrapper, error) {
+func CreateRedisConnection(dbconf config_modules.RedisConfiguration) (exec.CacheExecutor, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     dbconf.Host + ":" + dbconf.Port,
 		Password: dbconf.Password,
@@ -23,14 +23,6 @@ func CreateRedisConnection(dbconf config_modules.RedisConfiguration) (ClientWrap
 	return &clientWrapper{Client: client}, err
 }
 
-type ClientWrapper interface {
-	io.Closer
-	redis.Cmdable
-	SetStruct(ctx context.Context, key string, value interface{}, expiration time.Duration) (string, error)
-	GetStruct(ctx context.Context, key string, stk interface{}) error
-	HSetStruct(ctx context.Context, name string, key interface{}, value interface{}) (int64, error)
-	HGetStruct(ctx context.Context, key interface{}, field interface{}, value interface{}) error
-}
 
 type clientWrapper struct {
 	*redis.Client
