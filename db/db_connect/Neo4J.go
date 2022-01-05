@@ -1,7 +1,6 @@
 package db_connect
 
 import (
-
 	"fmt"
 	"github.com/meowalien/go-meowalien-lib/db/config_modules"
 	"github.com/neo4j/neo4j-go-driver/neo4j"

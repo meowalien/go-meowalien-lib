@@ -1,14 +1,15 @@
 package urls
 
 import (
-	"fmt"
+	"github.com/meowalien/go-meowalien-lib/errs"
 	"net/url"
 )
 
 func AddValues(rawURL string, values ...[2]string )(ansURL string , err error)  {
 	uu , err := url.Parse(rawURL)
 	if err != nil{
-		return "" , fmt.Errorf("error when Parse: ",err.Error())
+		err = errs.New(err)
+		return "" , err
 	}
 
 	qq:=uu.Query()

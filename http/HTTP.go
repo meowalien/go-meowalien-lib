@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/meowalien/go-meowalien-lib/errs"
 	"io"
 	"io/ioutil"
 	"log"
@@ -12,8 +13,6 @@ import (
 	"strconv"
 	"strings"
 )
-
-
 
 // 發送urlencodedFORM
 func DoURLEncodedFormRequest(endpoint string, req map[string]interface{}) ([]byte, error) {
@@ -59,7 +58,7 @@ func DoURLEncodedFormRequest(endpoint string, req map[string]interface{}) ([]byt
 func JsonRequest(endpoint string, req interface{}) ([]byte, error) {
 	jj , err := json.Marshal(req)
 	if err != nil{
-		return nil ,fmt.Errorf("error when Marshal: ",err.Error())
+		return nil , errs.New(err)
 	}
 
 	r, err := http.NewRequest("POST", endpoint, bytes.NewReader(jj)) // URL-encoded payload
@@ -69,7 +68,7 @@ func JsonRequest(endpoint string, req interface{}) ([]byte, error) {
 	client := &http.Client{}
 	res, err := client.Do(r)
 	if err != nil {
-		return nil, fmt.Errorf("error when Do: %s", err.Error())
+		return nil, errs.New(err)
 	}
 
 	defer func(Body io.ReadCloser) {

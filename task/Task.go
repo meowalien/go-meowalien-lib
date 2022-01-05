@@ -13,17 +13,17 @@ type ErrLogger interface {
 }
 
 type NewTaskForm struct {
-	NewTaskFunc   NewTaskFunc
-	TryAgainAfter time.Duration
-	DoTask        TaskRunner
-	ErrLogger     ErrLogger
+	NewTaskFunc      NewTaskFunc
+	TryAgainAfter    time.Duration
+	DoTask    TaskRunner
+	ErrLogger ErrLogger
 }
 
 type ContinueTask interface {
 	Start()
 }
 
-func NewTaskHolder(t NewTaskForm) ContinueTask {
+func NewTaskHolder(t NewTaskForm)ContinueTask {
 	return &continueTask{t}
 }
 

@@ -34,9 +34,7 @@ func (w *withLineError) Msg(msg ...interface{}) *withLineError {
 	if w.msg == "" {
 		w.msg = fmt.Sprint(msg...)
 	} else {
-
 		w.msg = fmt.Sprintf("%s <- %s", w.msg, fmt.Sprint(msg...))
-
 	}
 	return w
 }
@@ -73,11 +71,11 @@ func (w *withLineError) GetChain() *buffer.Buffer {
 	return a
 }
 
-func New(line string, err error) *withLineError {
+func new(line string, err error) *withLineError {
 	if line == "" {
 		return &withLineError{
 			preErr: nil,
-			nowErr: err, //fmt.Errorf("%s", line, err.Error()),
+			nowErr: err,
 		}
 	}
 	return &withLineError{
@@ -86,24 +84,22 @@ func New(line string, err error) *withLineError {
 	}
 }
 
-func WithLine(err interface{}, msg ...interface{}) WithLineError {
+func New(err interface{}, msg ...interface{}) WithLineError {
 	if err == nil {
 		return nil
 	}
+
 	switch e := err.(type) {
-	case WithLineError:
-		//fmt.Println("WithLineError")
+	case *withLineError:
 		if msg == nil || len(msg) == 0 {
 			return e
 		} else {
 			return e.Msg(msg...)
 		}
 	case error:
-		//fmt.Println("error")
-		ans := New(runtime.CallerFileAndLine(1), e)
-		return ans.Msg(msg...)
+		return new(runtime.CallerFileAndLine(1), e).Msg(msg...)
 	case string:
-		return New(runtime.CallerFileAndLine(1), errors.New(fmt.Sprintf(e, msg...)))
+		return new(runtime.CallerFileAndLine(1), errors.New(fmt.Sprintf(e, msg...)))
 	default:
 		panic(fmt.Sprintf("not supported input type for WithLine: %T", err))
 	}

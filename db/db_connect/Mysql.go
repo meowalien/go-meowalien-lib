@@ -1,9 +1,14 @@
 package db_connect
 
 import (
+	"database/sql"
 	"fmt"
-	"github.com/jmoiron/sqlx"
 	"github.com/meowalien/go-meowalien-lib/db/config_modules"
+	"log"
+	"time"
+
+	//_ "github.com/go-sql_nil-driver/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
 func CreateMysqlDBConnectionWithSQLX(dbconf config_modules.MysqlConnectConfiguration) (*sqlx.DB, error) {
@@ -19,5 +24,16 @@ func CreateMysqlDBConnectionWithSQLX(dbconf config_modules.MysqlConnectConfigura
 	}
 	db.SetMaxOpenConns(200)
 	db.SetMaxIdleConns(10)
+	go checkPing(db.DB , time.Second*15)
 	return db, nil
+}
+
+func checkPing(DB *sql.DB,d time.Duration) {
+	for {
+		time.Sleep(d)
+		err := DB.Ping()
+		if err != nil {
+			log.Println("error when checkPing",err)
+		}
+	}
 }
