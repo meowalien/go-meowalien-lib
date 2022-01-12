@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func CreateRedisConnection(dbconf config_modules.RedisConfiguration) (ClientWrapper, error) {
+func CreateRedisConnection(dbconf config_modules.RedisConfiguration) (RedisWrapper, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     dbconf.Host + ":" + dbconf.Port,
 		Password: dbconf.Password,
@@ -23,7 +23,7 @@ func CreateRedisConnection(dbconf config_modules.RedisConfiguration) (ClientWrap
 	return &clientWrapper{Client: client}, err
 }
 
-type ClientWrapper interface {
+type RedisWrapper interface {
 	io.Closer
 	redis.Cmdable
 	SetStruct(ctx context.Context, key string, value interface{}, expiration time.Duration) (string, error)

@@ -154,7 +154,7 @@ func (b *broker) Subscribe(filter Filter) *Client {
 
 // Unsubscribe will make broker stop sending new message to the given Client cnd close the c channel.
 func (b *broker) Unsubscribe(msgCh *Client) {
-	fmt.Println("Unsubscribe Client: ",msgCh)
+	//fmt.Println("Unsubscribe Client: ",msgCh)
 	if !b.isActive {
 		panic("the broker is not active, please start it up.")
 	}

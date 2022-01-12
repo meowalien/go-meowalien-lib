@@ -84,17 +84,23 @@ func new(line string, err error) *withLineError {
 	}
 }
 
-func New(err interface{}, msg ...interface{}) WithLineError {
+var Loop = false
+
+func WithLine(err interface{}, msg ...interface{}) WithLineError {
 	if err == nil {
 		return nil
 	}
 
 	switch e := err.(type) {
 	case *withLineError:
-		if msg == nil || len(msg) == 0 {
-			return e
-		} else {
-			return e.Msg(msg...)
+		if Loop {
+			return new(runtime.CallerFileAndLine(1), e).Msg(msg...)
+		}else{
+			if msg == nil || len(msg) == 0 {
+				return e
+			} else {
+				return e.Msg(msg...)
+			}
 		}
 	case error:
 		return new(runtime.CallerFileAndLine(1), e).Msg(msg...)

@@ -8,7 +8,7 @@ import (
 func AddValues(rawURL string, values ...[2]string )(ansURL string , err error)  {
 	uu , err := url.Parse(rawURL)
 	if err != nil{
-		err = errs.New(err)
+		err = errs.WithLine(err)
 		return "" , err
 	}
 
@@ -19,4 +19,16 @@ func AddValues(rawURL string, values ...[2]string )(ansURL string , err error)  
 	uu.RawQuery = qq.Encode()
 
 	return uu.String() , nil
+}
+
+func Join (uu ...string)(u *url.URL , err error){
+	u = &url.URL{}
+	for _, s := range uu {
+		u, err = u.Parse(s)
+		if err != nil {
+			err = errs.WithLine(err)
+			return
+		}
+	}
+	return
 }

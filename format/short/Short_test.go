@@ -1,7 +1,6 @@
 package short
 
 import (
-	"fmt"
 	"math/rand"
 	"testing"
 )
@@ -12,8 +11,8 @@ func TestShort(t *testing.T) {
 		hx := Base58Short(int64(i))
 
 		ax := DeBase58Short(hx)
-		fmt.Println("raw: ",i)
-		fmt.Println("ax: ",ax)
+		//fmt.Println("raw: ",i)
+		//fmt.Println("ax: ",ax)
 		if ax != int64(i) {
 			t.Errorf("error ax != rd: %d != %d" , ax , i)
 		}
