@@ -15,35 +15,41 @@ type Filter func(interface{}) bool
 type Client struct {
 	// New messages will be received through c
 	C      chan interface{}
+	broker Broker
 	filter Filter
 	uuid   string
+}
+
+func (b *Client) Publish(msg interface{}) {
+	b.broker.Publish(msg , b)
 }
 
 func (b *Client) Filter() Filter {
 	return b.filter
 }
-
 func (b *Client) UUID() string {
 	return b.uuid
 }
 
-
-
 var ErrClientClosed = fmt.Errorf("the clinet has allready be closed")
 
-func (b *Client) Close() error {
+func (b *Client) close() {
 	if b.C == nil {
-		return nil
+		return
 	}
 	select {
-	case _ ,ok := <-b.C:
-		if !ok{
-			return ErrClientClosed//fmt.Errorf("the clinet has allready be closed")
-		}else {
+	case _, ok := <-b.C:
+		if !ok {
+			return //fmt.Errorf("the clinet has allready be closed")
+		} else {
 			close(b.C)
 		}
 	default:
 		close(b.C)
 	}
-	return nil
+	return
+}
+
+func (b *Client) Close() {
+	b.broker.unsubscribe(b)
 }

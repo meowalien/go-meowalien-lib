@@ -1,7 +1,6 @@
 package broker
 
 import (
-	"fmt"
 	"github.com/meowalien/go-meowalien-lib/uuid"
 	"log"
 	"runtime/debug"
@@ -26,7 +25,7 @@ var threadLimiter = make(chan struct{}, MaximumBroadcastThreads)
 type Broker interface {
 	//start()
 	Subscribe(filter Filter) *Client
-	Unsubscribe(msgCh *Client)
+	unsubscribe(msgCh *Client)
 	Publish(msg interface{}, except ...*Client)
 }
 
@@ -85,55 +84,58 @@ func (b *broker) start() {
 	b.isActive = true
 	defer func() { b.isActive = false }()
 	allBroker = append(allBroker, b)
-lp: for {
-	select {
-	case <-b.stopCh:
-		for msgCh := range subs {
-			err := msgCh.Close()
-			if err != nil {
-				fmt.Printf("error when close %s Client: %s\n", msgCh.UUID(), err.Error())
+lp:
+	for {
+		select {
+		case <-b.stopCh:
+			for msgCh := range subs {
+				//err :=
+				msgCh.close()
+				//if err != nil {
+				//	fmt.Printf("error when close %s Client: %s\n", msgCh.UUID(), err.Error())
+				//}
 			}
-		}
-		break lp
-	case msgCh := <-b.subscribeChan:
-		subs[msgCh] = struct{}{}
-	case msgCh := <-b.unSubscribeChan:
-		err := msgCh.Close()
-		if err != nil {
-			log.Printf("error when close Client: %s\n", err.Error())
-		}
-		delete(subs, msgCh)
-	case m := <-b.publishChan:
-		msg := m[0]
-		allExcept := m[1].([]*Client)
+			break lp
+		case msgCh := <-b.subscribeChan:
+			subs[msgCh] = struct{}{}
+		case msgCh := <-b.unSubscribeChan:
+			//err :=
+			msgCh.close()
+			//if err != nil {
+			//	log.Printf("error when close Client: %s\n", err.Error())
+			//}
+			delete(subs, msgCh)
+		case m := <-b.publishChan:
+			msg := m[0]
+			allExcept := m[1].([]*Client)
 
-		for msgCh := range subs {
-			doTransfer := func(bk *Client) {
-				if allExcept != nil {
-					for _, exceptMsgCh := range allExcept {
-						if exceptMsgCh == bk {
-							return
+			for msgCh := range subs {
+				doTransfer := func(bk *Client) {
+					if allExcept != nil {
+						for _, exceptMsgCh := range allExcept {
+							if exceptMsgCh == bk {
+								return
+							}
 						}
 					}
-				}
-				if !b.isActive {
-					return
-				}
-
-				if bk.Filter() != nil && bk.Filter()(msg) {
-					if msgCh == nil || msgCh.C == nil {
+					if !b.isActive {
 						return
 					}
-					bk.C <- msg
-				}
-			}
 
-			threadLimiter <- struct{}{}
-			go doTransfer(msgCh)
-			<-threadLimiter
+					if bk.Filter() != nil && bk.Filter()(msg) {
+						if msgCh == nil || msgCh.C == nil {
+							return
+						}
+						bk.C <- msg
+					}
+				}
+
+				threadLimiter <- struct{}{}
+				go doTransfer(msgCh)
+				<-threadLimiter
+			}
 		}
 	}
-}
 }
 
 // stop will stop the broker
@@ -147,13 +149,13 @@ func (b *broker) Subscribe(filter Filter) *Client {
 	if !b.isActive {
 		panic("the broker is not active, please start it up.")
 	}
-	msgCh := &Client{C: make(chan interface{}, b.clientQueueSize), filter: filter, uuid: getUUID()}
+	msgCh := &Client{broker: b, C: make(chan interface{}, b.clientQueueSize), filter: filter, uuid: getUUID()}
 	b.subscribeChan <- msgCh
 	return msgCh
 }
 
 // Unsubscribe will make broker stop sending new message to the given Client cnd close the c channel.
-func (b *broker) Unsubscribe(msgCh *Client) {
+func (b *broker) unsubscribe(msgCh *Client) {
 	//fmt.Println("Unsubscribe Client: ",msgCh)
 	if !b.isActive {
 		panic("the broker is not active, please start it up.")
