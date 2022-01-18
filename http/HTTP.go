@@ -35,7 +35,7 @@ func DoURLEncodedFormRequest(endpoint string, req map[string]interface{}) ([]byt
 
 	res, err := client.Do(r)
 	if err != nil {
-		return nil, fmt.Errorf("error when client.Do: %w", err)
+		return nil, fmt.Errorf("error when client.Start: %w", err)
 	}
 
 	defer func(Body io.ReadCloser) {

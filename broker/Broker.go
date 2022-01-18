@@ -44,10 +44,10 @@ type broker struct {
 	clientQueueSize int
 }
 
-var allBroker []*broker
+var activeBrokers []*broker
 
 func StopAllBroker() {
-	for _, b := range allBroker {
+	for _, b := range activeBrokers {
 		b.stop()
 	}
 }
@@ -83,7 +83,7 @@ func (b *broker) start() {
 	subs := map[*Client]struct{}{}
 	b.isActive = true
 	defer func() { b.isActive = false }()
-	allBroker = append(allBroker, b)
+	activeBrokers = append(activeBrokers, b)
 lp:
 	for {
 		select {

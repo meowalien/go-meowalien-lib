@@ -273,10 +273,10 @@ func (c *connectionKeeper) writePump() {
 			var writer io.WriteCloser
 			switch message.(type) {
 			case TextMessage:
-				fmt.Println("TextMessage")
+				//fmt.Println("TextMessage")
 				writer, err = c.conn.NextWriter(websocket.TextMessage)
 			case BinaryMessage:
-				fmt.Println("BinaryMessage")
+				//fmt.Println("BinaryMessage")
 				writer, err = c.conn.NextWriter(websocket.BinaryMessage)
 			}
 
