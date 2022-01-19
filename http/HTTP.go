@@ -127,3 +127,45 @@ func PostURLFormWithClient(c PostForm, baseURL string, requestmap map[string]int
 	}
 	return
 }
+
+type GetForm interface {
+	Get(url string) (resp *http.Response, err error)
+}
+
+func GetURLFormWithClient(c GetForm, baseURL string, requestmap map[string]interface{}, rep interface{}) (err error) {
+	uu , err := url.Parse(baseURL)
+	qq:=uu.Query()
+	for key, value := range requestmap {
+		qq.Add(key ,fmt.Sprint(value))
+	}
+	uu.RawQuery = qq.Encode()
+fmt.Println("get url: ",uu.String())
+	res, err := c.Get(uu.String())
+	if err != nil {
+		err = errs.WithLine(err)
+		return
+	}
+	defer CloseResponse(res)
+
+	if res.StatusCode != 200 {
+		var all []byte
+		all, err = ioutil.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+
+		err = errs.WithLine("http response code: %d , rep: %v", res.StatusCode, string(all))
+		return
+	}
+	////fmt.Println("res  ",res.Body)
+	//all, err := ioutil.ReadAll(res.Body)
+	//if err != nil {
+	//	return err
+	//}
+	err = convert.DecodeJsonResponseToStruct(res, rep)
+	if err != nil {
+		err = errs.WithLine(err)
+		return
+	}
+	return
+}
