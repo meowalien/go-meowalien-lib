@@ -65,27 +65,17 @@ func (p *PersistentTask) Stop() {
 
 // 通知有新任務
 func (p *PersistentTask) Active() {
-	fmt.Println("enter Active")
-	defer fmt.Println("end Active")
+	//fmt.Println("enter Active")
+	//defer fmt.Println("end Active")
 	if !p.hasNew {
-		// if !t.Stop() {
-		//  <-t.C
-		// }
-		// t.Reset(d)
 		if !p.timmer.Stop(){
 			select {
 			case <-p.timmer.C:
 			default:
 			}
 		}
-		//fmt.Println("timmerStop: ",timmerStop)
-
-		//if !{
-		//
-
-		//}
-		resetbool := p.timmer.Reset(p.ptf.TimeOut)
-		fmt.Println("Resetbool: ", resetbool)
+		p.timmer.Reset(p.ptf.TimeOut)
+		//fmt.Println("Resetbool: ", resetbool)
 		p.hasNew = true
 	}
 
