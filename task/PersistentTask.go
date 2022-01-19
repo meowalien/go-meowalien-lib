@@ -28,37 +28,65 @@ type PersistentTask struct {
 
 // 啟動
 func (p *PersistentTask) Start() {
+	fmt.Println("PersistentTask Start")
+	fmt.Println("p.ptf.TimeOut: ", p.ptf.TimeOut)
 	p.timmer = time.NewTimer(p.ptf.TimeOut)
 	p.lock = sync.Mutex{}
 	p.stopChan = make(chan struct{}, 0)
-
-loop:
-	for {
-		select {
-		case <-p.timmer.C:
-			if !p.hasNew {
-				continue
+	p.hasNew = true
+	go func() {
+	loop:
+		for {
+			select {
+			case <-p.timmer.C:
+				fmt.Println("time up")
+				if !p.hasNew {
+					continue
+				}
+				p.ptf.Mission()
+				p.hasNew = false
+			case <-p.stopChan:
+				if !p.timmer.Stop() {
+					<-p.timmer.C
+				}
+				break loop
 			}
-			p.ptf.Mission()
-			p.hasNew = false
-			p.timmer.Reset(p.ptf.TimeOut)
-		case <-p.stopChan:
-			if !p.timmer.Stop() {
-				<-p.timmer.C
-			}
-			break loop
 		}
-	}
-	fmt.Println("persistentTask stop")
+		fmt.Println("persistentTask stop")
+	}()
+
 }
 
 func (p *PersistentTask) Stop() {
+	fmt.Println("enter Stop")
+
 	close(p.stopChan)
 }
 
 // 通知有新任務
 func (p *PersistentTask) Active() {
+	fmt.Println("enter Active")
+	defer fmt.Println("end Active")
 	if !p.hasNew {
+		// if !t.Stop() {
+		//  <-t.C
+		// }
+		// t.Reset(d)
+		if !p.timmer.Stop(){
+			select {
+			case <-p.timmer.C:
+			default:
+			}
+		}
+		//fmt.Println("timmerStop: ",timmerStop)
+
+		//if !{
+		//
+
+		//}
+		resetbool := p.timmer.Reset(p.ptf.TimeOut)
+		fmt.Println("Resetbool: ", resetbool)
 		p.hasNew = true
 	}
+
 }
