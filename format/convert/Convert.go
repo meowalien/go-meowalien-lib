@@ -16,11 +16,11 @@ func ConvertMapToURLForm(postMap map[string]interface{}) url.Values {
 	}
 	return form
 }
-func MapstructureOnJsonTag(input interface{} , i interface{}) (err error) {
-	return MapstructureOnTag(input , "json" , i)
+func MapstructureOnJsonTag(input interface{}, i interface{}) (err error) {
+	return MapstructureOnTag(input, "json", i)
 }
 
-func MapstructureOnTag(input interface{} , tag string, i interface{}) (err error){
+func MapstructureOnTag(input interface{}, tag string, i interface{}) (err error) {
 	jsonDecoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Result:  i,
 		TagName: tag,
@@ -38,15 +38,20 @@ func MapstructureOnTag(input interface{} , tag string, i interface{}) (err error
 	return
 }
 
+func DecodeJsonResponseToStruct(res *http.Response, i interface{}) (err error) {
+	//all, err := ioutil.ReadAll(res.Body)
+	//if err != nil {
+	//	return errs.WithLine(err)
+	//}
 
+	//fmt.Println("all: ",string(all))
 
-
-func DecodeJsonResponseToStruct(res *http.Response , i interface{}) (err error) {
+	//err = json.Unmarshal(all, i)
 	decoder := json.NewDecoder(res.Body)
 	err = decoder.Decode(i)
-	if err != nil{
-	    err = errs.WithLine(err)
-	    return
+	if err != nil {
+		err = errs.WithLine(err)
+		return
 	}
 	return
 }
