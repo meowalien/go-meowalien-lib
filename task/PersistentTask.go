@@ -2,17 +2,22 @@ package task
 
 import (
 	"fmt"
+	"log"
+
+	//"gitlab.joy-games.online/containable_projects/gameplatform-core/internal/lib/log"
 	"sync"
 	"time"
 )
 
 type PersistentTaskForm struct {
-	TimeOut time.Duration
-	Mission func()
+	ExecutionInterval time.Duration
+	Mission           func() error
+	TryAgainTimeout   time.Duration
+	MaxTryTimes       int
 }
 
 func NewPersistentTask(t PersistentTaskForm) *PersistentTask {
-	if t.TimeOut == 0 {
+	if t.ExecutionInterval == 0 {
 		panic("the timeout should not be empty")
 	}
 	return &PersistentTask{ptf: t}
@@ -28,9 +33,9 @@ type PersistentTask struct {
 
 // 啟動
 func (p *PersistentTask) Start() {
-	fmt.Println("PersistentTask Start")
-	fmt.Println("p.ptf.TimeOut: ", p.ptf.TimeOut)
-	p.timmer = time.NewTimer(p.ptf.TimeOut)
+	//fmt.Println("PersistentTask Start")
+	//fmt.Println("p.ptf.ExecutionInterval: ", p.ptf.ExecutionInterval)
+	p.timmer = time.NewTimer(p.ptf.ExecutionInterval)
 	p.lock = sync.Mutex{}
 	p.stopChan = make(chan struct{}, 0)
 	p.hasNew = true
@@ -43,7 +48,20 @@ func (p *PersistentTask) Start() {
 				if !p.hasNew {
 					continue
 				}
-				p.ptf.Mission()
+				err := p.ptf.Mission()
+				var remainTryTimes = p.ptf.MaxTryTimes
+				//err := action()
+				for err != nil {
+					if remainTryTimes == 0 {
+						log.Printf("fail to do mission, err: %s , giveup to try after %d times", err.Error(), p.ptf.MaxTryTimes)
+						continue loop
+					}
+					log.Printf("fail to do mission, err: %s , try again after %s", err.Error(), p.ptf.TryAgainTimeout.String())
+
+					time.Sleep(p.ptf.TryAgainTimeout)
+					err = p.ptf.Mission()
+					remainTryTimes--
+				}
 				p.hasNew = false
 			case <-p.stopChan:
 				if !p.timmer.Stop() {
@@ -65,18 +83,24 @@ func (p *PersistentTask) Stop() {
 
 // 通知有新任務
 func (p *PersistentTask) Active() {
-	//fmt.Println("enter Active")
-	//defer fmt.Println("end Active")
 	if !p.hasNew {
-		if !p.timmer.Stop(){
-			select {
-			case <-p.timmer.C:
-			default:
-			}
-		}
-		p.timmer.Reset(p.ptf.TimeOut)
-		//fmt.Println("Resetbool: ", resetbool)
-		p.hasNew = true
+		p.SkipScheduled()
+		p.ScheduleNext()
+		//p.timmer.Reset(p.ptf.ExecutionInterval)
+		//p.hasNew = true
 	}
+}
 
+func (p *PersistentTask) ScheduleNext() {
+	p.timmer.Reset(p.ptf.ExecutionInterval)
+	p.hasNew = true
+}
+
+func (p *PersistentTask) SkipScheduled() {
+	if !p.timmer.Stop() {
+		select {
+		case <-p.timmer.C:
+		default:
+		}
+	}
 }
