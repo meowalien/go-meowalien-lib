@@ -8,6 +8,7 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/neo4j/neo4j-go-driver v1.8.3
+	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.0
 	go.uber.org/zap v1.19.1
