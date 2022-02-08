@@ -95,7 +95,7 @@ func WithLine(err interface{}, msg ...interface{}) WithLineError {
 	case *withLineError:
 		if Loop {
 			return new(runtime.CallerFileAndLine(1), e).Msg(msg...)
-		}else{
+		} else {
 			if msg == nil || len(msg) == 0 {
 				return e
 			} else {
@@ -107,6 +107,6 @@ func WithLine(err interface{}, msg ...interface{}) WithLineError {
 	case string:
 		return new(runtime.CallerFileAndLine(1), errors.New(fmt.Sprintf(e, msg...)))
 	default:
-		panic(fmt.Sprintf("not supported input type for WithLine: %T", err))
+		return new(runtime.CallerFileAndLine(1), errors.New(fmt.Sprintf(fmt.Sprintf("%v", e), msg...)))
 	}
 }
