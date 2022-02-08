@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	go_meowalien_lib "github.com/meowalien/go-meowalien-lib"
 	"github.com/meowalien/go-meowalien-lib/errs"
 	"github.com/meowalien/go-meowalien-lib/format/convert"
 	"io"
@@ -117,10 +118,10 @@ type PostForm interface {
 	PostForm(url string, data url.Values) (resp *http.Response, err error)
 }
 
-var SHOW_DEBUG_MESSAGE = false
+//var SHOW_DEBUG_MESSAGE = false
 
 func PostURLFormWithClient(c PostForm, baseURL string, requestmap map[string]interface{}, rep interface{}) (err error) {
-	if SHOW_DEBUG_MESSAGE {
+	if go_meowalien_lib.SHOW_DEBUG_MESSAGE {
 		fmt.Println("baseURL: ", baseURL)
 		fmt.Println(" ----- ")
 		for k, v := range requestmap {

@@ -3,8 +3,10 @@ package convert
 import (
 	"encoding/json"
 	"fmt"
+	go_meowalien_lib "github.com/meowalien/go-meowalien-lib"
 	"github.com/meowalien/go-meowalien-lib/errs"
 	"github.com/mitchellh/mapstructure"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 )
@@ -19,6 +21,11 @@ func ConvertMapToURLForm(postMap map[string]interface{}) url.Values {
 func MapstructureOnJsonTag(input interface{}, i interface{}) (err error) {
 	return MapstructureOnTag(input, "json", i)
 }
+
+func MapstructureOnFormTag(input interface{}, i interface{}) (err error) {
+	return MapstructureOnTag(input, "form", i)
+}
+
 
 func MapstructureOnTag(input interface{}, tag string, i interface{}) (err error) {
 	jsonDecoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
@@ -38,20 +45,26 @@ func MapstructureOnTag(input interface{}, tag string, i interface{}) (err error)
 	return
 }
 
+
+
 func DecodeJsonResponseToStruct(res *http.Response, i interface{}) (err error) {
-	//all, err := ioutil.ReadAll(res.Body)
-	//if err != nil {
-	//	return errs.WithLine(err)
-	//}
+	if go_meowalien_lib.SHOW_DEBUG_MESSAGE{
+		var all []byte
+		all, err = ioutil.ReadAll(res.Body)
+		if err != nil {
+			return errs.WithLine(err)
+		}
 
-	//fmt.Println("all: ",string(all))
+		fmt.Println("response: ",string(all))
 
-	//err = json.Unmarshal(all, i)
-	decoder := json.NewDecoder(res.Body)
-	err = decoder.Decode(i)
-	if err != nil {
-		err = errs.WithLine(err)
-		return
+		err = json.Unmarshal(all, i)
+	}else {
+		decoder := json.NewDecoder(res.Body)
+		err = decoder.Decode(i)
+		if err != nil {
+			err = errs.WithLine(err)
+			return
+		}
 	}
 	return
 }
