@@ -32,9 +32,11 @@ type Option struct {
 	AllowOverflow bool
 }
 
-// base = 相對於其他比例的倍數
-// reserved = 實際存儲的倍數
-// number = 當前倍率下數字
+/*
+base = 相對於其他比例的倍數
+reserved = 實際存儲的倍數
+ number = 當前倍率下數字
+*/
 func New(number int64, base int64, reserved int64, opt ...Option) Value {
 	var op Option
 	if opt == nil || len(opt) == 0 {
