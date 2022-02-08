@@ -17,6 +17,7 @@ type Value interface {
 	MultiplyBy(dc Value) Value
 	DivideBy(dc Value) Value
 	Add(dc Value) Value
+	RAdd(dc Value) Value
 	Sub(dc Value) Value
 	Negative() Value
 	toModify(modify modify) Value
@@ -72,6 +73,9 @@ type value struct {
 }
 
 func (d value) toModify(modify modify) Value {
+	if d.modify.reserved == modify.reserved && d.modify.base == modify.base {
+		return &d
+	}
 	d.actual = math.Div(math.Mulb(d.actual, modify.reserved, d.AllowOverflow), d.reserved, d.Round)
 	d.modify = modify
 	return &d
@@ -91,7 +95,10 @@ func (d value) Add(dc Value) Value {
 	d.actual = math.Add64b(d.actual, dc.toModify(d.modify).Actual(), d.AllowOverflow)
 	return &d
 }
-
+func (d *value) RAdd(dc Value) Value {
+	d.actual = math.Add64b(d.actual, dc.toModify(d.modify).Actual(), d.AllowOverflow)
+	return d
+}
 func (d *value) As(base int64) int64 {
 	return math.Div(math.Mulb(d.actual, base, d.AllowOverflow), d.reserved, d.Round)
 }
