@@ -66,7 +66,7 @@ func Sub(left, right int64) (int64, bool) {
 // return true if overflow
 func Mul(left, right int64) (int64, bool) {
 	x := left * right
-	return x , x != 0 && x/left != right
+	return x , x != 0 && x/right != left
 }
 
 func  Mulb(a , b int64 , allowOverflow bool) int64{
