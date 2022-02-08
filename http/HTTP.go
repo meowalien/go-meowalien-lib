@@ -15,6 +15,24 @@ import (
 	"strings"
 )
 
+func ConvertFormRequestToMap(r *http.Request) (m map[string]interface{}) {
+	cMap := make(map[string]interface{})
+	switch r.Method {
+	case "GET":
+		query := r.URL.Query()
+		for k, v := range query {
+			cMap[k] = v[0]
+		}
+
+	case "POST":
+		r.ParseForm()
+		for k, v := range r.Form {
+			cMap[k] = v[0]
+		}
+	}
+	return cMap
+}
+
 // 發送urlencodedFORM
 func DoURLEncodedFormRequest(endpoint string, req map[string]interface{}) ([]byte, error) {
 	data := url.Values{}
@@ -54,7 +72,6 @@ func DoURLEncodedFormRequest(endpoint string, req map[string]interface{}) ([]byt
 
 	return body, nil
 }
-
 
 func JsonRequest(endpoint string, req interface{}) ([]byte, error) {
 	jj, err := json.Marshal(req)
@@ -100,7 +117,18 @@ type PostForm interface {
 	PostForm(url string, data url.Values) (resp *http.Response, err error)
 }
 
+var SHOW_DEBUG_MESSAGE = false
+
 func PostURLFormWithClient(c PostForm, baseURL string, requestmap map[string]interface{}, rep interface{}) (err error) {
+	if SHOW_DEBUG_MESSAGE {
+		fmt.Println("baseURL: ", baseURL)
+		fmt.Println(" ----- ")
+		for k, v := range requestmap {
+			fmt.Printf("%s:%v\n", k, v)
+		}
+		fmt.Println(" ----- ")
+	}
+
 	form := convert.ConvertMapToURLForm(requestmap)
 
 	res, err := c.PostForm(baseURL, form)
@@ -110,7 +138,10 @@ func PostURLFormWithClient(c PostForm, baseURL string, requestmap map[string]int
 	}
 	defer CloseResponse(res)
 
-	if res.StatusCode != 200 {
+	if res.StatusCode == http.StatusNoContent {
+		log.Println("StatusNoContent ...")
+		return
+	} else if res.StatusCode != 200 {
 		var all []byte
 		all, err = ioutil.ReadAll(res.Body)
 		if err != nil {
@@ -134,13 +165,13 @@ type GetForm interface {
 }
 
 func GetURLFormWithClient(c GetForm, baseURL string, requestmap map[string]interface{}, rep interface{}) (err error) {
-	uu , err := url.Parse(baseURL)
-	qq:=uu.Query()
+	uu, err := url.Parse(baseURL)
+	qq := uu.Query()
 	for key, value := range requestmap {
-		qq.Add(key ,fmt.Sprint(value))
+		qq.Add(key, fmt.Sprint(value))
 	}
 	uu.RawQuery = qq.Encode()
-fmt.Println("get url: ",uu.String())
+	fmt.Println("get url: ", uu.String())
 	res, err := c.Get(uu.String())
 	if err != nil {
 		err = errs.WithLine(err)
@@ -158,11 +189,7 @@ fmt.Println("get url: ",uu.String())
 		err = errs.WithLine("http response code: %d , rep: %v", res.StatusCode, string(all))
 		return
 	}
-	////fmt.Println("res  ",res.Body)
-	//all, err := ioutil.ReadAll(res.Body)
-	//if err != nil {
-	//	return err
-	//}
+
 	err = convert.DecodeJsonResponseToStruct(res, rep)
 	if err != nil {
 		err = errs.WithLine(err)
