@@ -172,7 +172,7 @@ func GetURLFormWithClient(c GetForm, baseURL string, requestmap map[string]inter
 		qq.Add(key, fmt.Sprint(value))
 	}
 	uu.RawQuery = qq.Encode()
-	fmt.Println("get url: ", uu.String())
+	//fmt.Println("get url: ", uu.String())
 	res, err := c.Get(uu.String())
 	if err != nil {
 		err = errs.WithLine(err)

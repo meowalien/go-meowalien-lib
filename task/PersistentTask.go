@@ -50,10 +50,9 @@ func (p *PersistentTask) Start() {
 				}
 				err := p.ptf.Mission()
 				var remainTryTimes = p.ptf.MaxTryTimes
-				//err := action()
 				for err != nil {
 					if remainTryTimes == 0 {
-						log.Printf("fail to do mission, err: %s , giveup to try after %d times", err.Error(), p.ptf.MaxTryTimes)
+						log.Printf("giveup to do mission after %d times try , err: %s , ", p.ptf.MaxTryTimes, err.Error())
 						continue loop
 					}
 					log.Printf("fail to do mission, err: %s , try again after %s", err.Error(), p.ptf.TryAgainTimeout.String())
