@@ -8,26 +8,20 @@ import (
 var errInvalidWrite = errors.New("invalid write result")
 
 func CopyBufferWithCallback(dst io.Writer, src io.Reader, buf []byte, callback func(count int,written int64)) (written int64, err error) {
-	if wt, ok := src.(io.WriterTo); ok {
-		return wt.WriteTo(dst)
-	}
+	//if wt, ok := src.(io.WriterTo); ok {
+	//	return wt.WriteTo(dst)
+	//}
+	//fmt.Printf("res.Body8: %v",src)
 
 	if buf == nil {
-		size := 32 * 1024
-		if l, ok := src.(*io.LimitedReader); ok && int64(size) > l.N {
-			if l.N < 1 {
-				size = 1
-			} else {
-				size = int(l.N)
-			}
-		}
-		buf = make([]byte, size)
+		err = errors.New("bf is nil")
+		return
 	}
 
 	var count int
 	for {
-
 		nr, er := src.Read(buf)
+		//fmt.Println("nr: ",nr)
 		if nr > 0 {
 			nw, ew := dst.Write(buf[0:nr])
 			if nw < 0 || nr < nw {

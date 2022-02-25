@@ -23,7 +23,7 @@ func AddKeyValues(rawURL string, values ...[2]string )(ansURL string , err error
 
 //
 //func AddValues(rawURL *url.URL, values url.Values )(ansURL string , err error)  {
-//	//uu , err := url.Parse(rawURL)
+//	//uu , err := url.Handle(rawURL)
 //	//if err != nil{
 //	//	err = errs.WithLine(err)
 //	//	return "" , err
