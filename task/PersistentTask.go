@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 
-	//"gitlab.joy-games.online/containable_projects/gameplatform-core/internal/lib/log"
-	"sync"
 	"time"
 )
 
@@ -26,7 +24,7 @@ func NewPersistentTask(t PersistentTaskForm) *PersistentTask {
 type PersistentTask struct {
 	ptf      PersistentTaskForm
 	timmer   *time.Timer
-	lock     sync.Mutex
+	//lock     sync.Mutex
 	hasNew   bool
 	stopChan chan struct{}
 }
@@ -36,7 +34,7 @@ func (p *PersistentTask) Start() {
 	//fmt.Println("PersistentTask Start")
 	//fmt.Println("p.ptf.ExecutionInterval: ", p.ptf.ExecutionInterval)
 	p.timmer = time.NewTimer(p.ptf.ExecutionInterval)
-	p.lock = sync.Mutex{}
+	//p.lock = sync.Mutex{}
 	p.stopChan = make(chan struct{}, 0)
 	p.hasNew = true
 	go func() {
@@ -44,7 +42,7 @@ func (p *PersistentTask) Start() {
 		for {
 			select {
 			case <-p.timmer.C:
-				fmt.Println("time up")
+				fmt.Println("PersistentTask time up")
 				if !p.hasNew {
 					continue
 				}
@@ -84,13 +82,11 @@ func (p *PersistentTask) Stop() {
 func (p *PersistentTask) Active() {
 	if !p.hasNew {
 		p.SkipScheduled()
-		p.ScheduleNext()
-		//p.timmer.Reset(p.ptf.ExecutionInterval)
-		//p.hasNew = true
+		p.scheduleNext()
 	}
 }
 
-func (p *PersistentTask) ScheduleNext() {
+func (p *PersistentTask) scheduleNext() {
 	p.timmer.Reset(p.ptf.ExecutionInterval)
 	p.hasNew = true
 }
