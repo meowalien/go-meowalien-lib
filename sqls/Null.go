@@ -5,12 +5,12 @@ import (
 	"time"
 )
 
-func NewNullString(s string) sql.NullString {
-	if s == "" {
+func NewNullString(s *string) sql.NullString {
+	if s == nil {
 		return sql.NullString{}
 	}
 	return sql.NullString{
-		String: s,
+		String: *s,
 		Valid:  true,
 	}
 }
