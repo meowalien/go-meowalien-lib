@@ -12,6 +12,5 @@ return byteArrayPool.Get().([]byte)
 }
 
 func PutByteArray(b []byte ) {
-	b = b[:0]
 	byteArrayPool.Put(b)
 }

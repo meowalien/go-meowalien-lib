@@ -12,7 +12,6 @@ func CopyBufferWithCallback(dst io.Writer, src io.Reader, buf []byte, callback f
 	//	return wt.WriteTo(dst)
 	//}
 	//fmt.Printf("res.Body8: %v",src)
-
 	if buf == nil {
 		err = errors.New("bf is nil")
 		return
