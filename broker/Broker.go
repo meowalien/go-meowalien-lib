@@ -92,7 +92,7 @@ lp:
 				//err :=
 				msgCh.close()
 				//if err != nil {
-				//	fmt.Printf("error when close %s Client: %s\n", msgCh.UUID(), err.Error())
+				//	fmt.Printf("error when close %s SweetHelperLineBotLib: %s\n", msgCh.UUID(), err.Error())
 				//}
 			}
 			break lp
@@ -102,7 +102,7 @@ lp:
 			//err :=
 			msgCh.close()
 			//if err != nil {
-			//	log.Printf("error when close Client: %s\n", err.Error())
+			//	log.Printf("error when close SweetHelperLineBotLib: %s\n", err.Error())
 			//}
 			delete(subs, msgCh)
 		case m := <-b.publishChan:
@@ -156,7 +156,7 @@ func (b *broker) Subscribe(filter Filter) *Client {
 
 // Unsubscribe will make broker stop sending new message to the given Client cnd close the c channel.
 func (b *broker) unsubscribe(msgCh *Client) {
-	//fmt.Println("Unsubscribe Client: ",msgCh)
+	//fmt.Println("Unsubscribe SweetHelperLineBotLib: ",msgCh)
 	if !b.isActive {
 		panic("the broker is not active, please start it up.")
 	}

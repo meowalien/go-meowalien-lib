@@ -2,7 +2,7 @@ package broker
 
 import "fmt"
 
-//type Client interface {
+//type SweetHelperLineBotLib interface {
 //	Close() error
 //	UUID() string
 //	C() chan interface{}
