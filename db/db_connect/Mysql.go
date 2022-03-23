@@ -28,7 +28,7 @@ func CreateMysqlDBConnection(dbconf config_modules.MysqlConnectConfiguration) (*
 	return db, nil
 }
 
-func CreateMysqlDBConnectionWithSQLX(conn *sql.DB, driverName string) (db *sqlx.DB,err error) {
+func CreateSQLXConnection(conn *sql.DB, driverName string) (db *sqlx.DB,err error) {
 	db = sqlx.NewDb(conn, driverName)
 	err = db.Ping()
 	return
