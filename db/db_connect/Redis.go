@@ -3,10 +3,15 @@ package db_connect
 import (
 	"context"
 	"github.com/go-redis/redis/v8"
-	"github.com/meowalien/go-meowalien-lib/db/config_modules"
 )
+type RedisConfiguration struct {
+	Host     string
+	Port     string
+	Password string
+	ID       int
+}
 
-func CreateRedisConnection(dbconf config_modules.RedisConfiguration) (*redis.Client, error) {
+func CreateRedisConnection(dbconf RedisConfiguration) (*redis.Client, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     dbconf.Host + ":" + dbconf.Port,
 		Password: dbconf.Password,

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/meowalien/go-meowalien-lib/db/config_modules"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
@@ -13,8 +12,15 @@ import (
 	//_ "github.com/go-sql_nil-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
+type MysqlConnectConfiguration struct {
+	Host     string
+	Database string
+	User     string
+	Password string
+	Port     string
+}
 
-func CreateMysqlDBConnection(dbconf config_modules.MysqlConnectConfiguration) (*sql.DB, error) {
+func CreateMysqlDBConnection(dbconf MysqlConnectConfiguration) (*sql.DB, error) {
 	dsn := "%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local"
 	dsn = fmt.Sprintf(dsn, dbconf.User, dbconf.Password, dbconf.Host, dbconf.Port, dbconf.Database)
 	db, err := sql.Open("mysql", dsn)
