@@ -15,7 +15,6 @@ func Md5Hash(b []byte) []byte {
 }
 func Md5HashString(b []byte) string {
 	return hex.EncodeToString(Md5Hash(b))
-	//return md5Str
 }
 
 var bfPool = buffer.NewPool()
