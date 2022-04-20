@@ -14,10 +14,10 @@ type MangoDBConfiguration struct {
 	Password string `json:"Password"`
 	Host     string `json:"Host"`
 	Port     string `json:"Port"`
-	Database string `json:"Database"`
+	//Database string `json:"Database"`
 }
 
-func CreateMongoDBConnection(dbconf MangoDBConfiguration) (DB *mongo.Database, err error) {
+func CreateMongoDBConnection(dbconf MangoDBConfiguration) (DB *mongo.Client, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -26,18 +26,19 @@ func CreateMongoDBConnection(dbconf MangoDBConfiguration) (DB *mongo.Database, e
 	//	Password: dbconf.Password,
 	//}
 
-	option := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%s/%s"  , dbconf.User , dbconf.Password, dbconf.Host, dbconf.Port , dbconf.Database))//.SetAuth(credential)
-	client, err := mongo.Connect(ctx, option)
+	option := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%s/"  , dbconf.User , dbconf.Password, dbconf.Host, dbconf.Port ))//.SetAuth(credential)
+	DB, err = mongo.Connect(ctx, option)
 	if err != nil {
 		return
 	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	err = client.Ping(ctx, readpref.Primary())
+	err = DB.Ping(ctx, readpref.Primary())
 	if err != nil {
 		return
 	}
-	DB = client.Database(dbconf.Database)
+
+	//DB = DB.Database(dbconf.Database)
 	return
 }
