@@ -8,18 +8,19 @@ import (
 	"github.com/meowalien/go-meowalien-lib/errs"
 	"github.com/meowalien/go-meowalien-lib/uuid"
 	"io"
+	"net"
 	"net/http"
 	"time"
 )
 
 type ConnectionKeeper interface {
 	CloseConnection() error
-	Open(writer http.ResponseWriter, request *http.Request) error
+	Open(writer http.ResponseWriter, request *http.Request, responseHeader http.Header) error
 	SentBinaryMessage(message ...BinaryMessage)
 	SentText(message ...string)
 	SentMessage(message ...Message)
 	SentJson(s ...interface{}) error
-	SetLifeTimeHook(lifeTimeHook LifeTimeHook)
+	SetHook(lifeTimeHook LifeTimeHook)
 	UUID() string
 	ConnectionClosed() bool
 }
@@ -84,8 +85,8 @@ type Option struct {
 	ReadMiddleWare func(io.Reader)
 }
 
-func DefaultOption() *Option {
-	return &Option{
+func DefaultOption() Option {
+	return Option{
 		ConnectionOwner:              "",
 		AllowMultipleConnection:      true,
 		AutoDisconnectOldConnections: false,
@@ -101,14 +102,19 @@ func DefaultOption() *Option {
 	}
 }
 
-func NewConnectionKeeper(option *Option) (ck ConnectionKeeper) {
-	if option == nil {
-		option = DefaultOption()
+type OptionModifier func(option *Option)
+
+func NewConnectionKeeper(optionModifier ...OptionModifier) (ck ConnectionKeeper) {
+	//if option == nil {
+	option := DefaultOption()
+	for _, modifier := range optionModifier {
+		modifier(&option)
 	}
+	//}
 
 	ck = &connectionKeeper{
 		uuid:   uuid.NewUUID("CK"),
-		Option: *option,
+		Option: option,
 	}
 	return ck
 }
@@ -118,7 +124,7 @@ type connectionKeeper struct {
 	conn               *websocket.Conn
 	uuid               string
 	sentMessageChannel chan Message
-	lifeTimeHook       LifeTimeHook
+	LifeTimeHook
 	//connectionClosed   bool
 	readPumpClosed  bool
 	writePumpClosed bool
@@ -128,8 +134,8 @@ func (c *connectionKeeper) UUID() string {
 	return c.uuid
 }
 
-func (c *connectionKeeper) SetLifeTimeHook(lifeTimeHook LifeTimeHook) {
-	c.lifeTimeHook = lifeTimeHook
+func (c *connectionKeeper) SetHook(lifeTimeHook LifeTimeHook) {
+	c.LifeTimeHook = lifeTimeHook
 }
 
 func (c *connectionKeeper) SentBinaryMessage(message ...BinaryMessage) {
@@ -144,7 +150,7 @@ func (c *connectionKeeper) SentMessage(message ...Message) {
 }
 func (c *connectionKeeper) SentText(message ...string) {
 	for _, rawMessage := range message {
-		c.SentMessage( NewTextMessage(rawMessage))
+		c.SentMessage(NewTextMessage(rawMessage))
 	}
 }
 
@@ -162,7 +168,9 @@ func (c *connectionKeeper) SentJson(s ...interface{}) error {
 	return nil
 }
 
-func (c *connectionKeeper) Open(writer http.ResponseWriter, request *http.Request) (err error) {
+const writeWait = time.Second
+
+func (c *connectionKeeper) Open(writer http.ResponseWriter, request *http.Request, responseHeader http.Header) (err error) {
 	err = c.multipleConnectionProcess()
 	if err != nil {
 		return err
@@ -174,7 +182,7 @@ func (c *connectionKeeper) Open(writer http.ResponseWriter, request *http.Reques
 		WriteBufferSize: c.WriteBufferSize,
 		CheckOrigin:     c.CheckOrigin,
 	}
-	c.conn, err = websocketUpgrader.Upgrade(writer, request, nil)
+	c.conn, err = websocketUpgrader.Upgrade(writer, request, responseHeader)
 	if err != nil {
 		err = errs.WithLine(err)
 		return
@@ -186,22 +194,40 @@ func (c *connectionKeeper) Open(writer http.ResponseWriter, request *http.Reques
 		return fmt.Errorf("error when SetReadDeadline: %s", err.Error())
 	}
 
-	c.conn.SetPongHandler(func(string) error {
+	c.conn.SetPingHandler(func(message string) error {
+		err := c.conn.WriteControl(websocket.PongMessage, []byte(message), time.Now().Add(writeWait))
+		if err != nil {
+			if err == websocket.ErrCloseSent {
+				return nil
+			} else if e, ok := err.(net.Error); ok && e.Temporary() {
+				return nil
+			} else {
+				return err
+			}
+		}
+
+		return c.OnPing(message)
+	})
+
+	c.conn.SetPongHandler(func(msg string) error {
 		e := c.conn.SetReadDeadline(time.Now().Add(c.PongWait))
 		if e != nil {
 			return e
 		}
-		return nil
+		//if c.lifeTimeHook.OnPong != nil {
+		return c.OnPong(msg)
+		//}
+		//return nil
 	})
 
 	go c.readPump()
 	go c.writePump()
 
-	if c.lifeTimeHook == nil {
-		c.lifeTimeHook = emptyDispatcher{}
+	if c.LifeTimeHook == nil {
+		c.LifeTimeHook = emptyDispatcher{}
 	}
 
-	c.lifeTimeHook.OnOpenConnection(c.uuid)
+	c.OnOpenConnection(c.uuid)
 
 	return nil
 }
@@ -214,7 +240,7 @@ func (c *connectionKeeper) readPump() {
 			if closeError, ok := e.(*websocket.CloseError); ok {
 				c.Logger.Warnf("Connection %s readPump close, type: %s", c.uuid, WebsocketCloseCodeNumberToString(closeError.Code))
 			} else {
-				c.Logger.Errorf("NextReader error: %s", e.Error())
+				c.Logger.Errorf("NextReader error: %s\n", e.Error())
 			}
 			c.readPumpClosed = true
 			err := c.CloseConnection()
@@ -237,22 +263,17 @@ func (c *connectionKeeper) readPump() {
 		}
 
 		switch messageType {
-		case websocket.PingMessage:
-			c.lifeTimeHook.OnPing(message)
-
-		case websocket.PongMessage:
-			c.lifeTimeHook.OnPong(message)
+		//default:
+		//	switch messageType {
+		case websocket.TextMessage:
+			c.OnTextMessage(&textMessage{
+				message,
+			})
+		case websocket.BinaryMessage:
+			c.OnBinaryMessage(message)
 		default:
-			switch messageType {
-			case websocket.TextMessage:
-				c.lifeTimeHook.OnTextMessage(&textMessage{
-					message,
-				})
-			case websocket.BinaryMessage:
-				c.lifeTimeHook.OnBinaryMessage(message)
-			default:
-				c.Logger.Errorf("Unknown event: %v", message)
-			}
+			c.Logger.Errorf("Unknown event: %v", message)
+			//}
 		}
 	}
 }
@@ -271,13 +292,17 @@ func (c *connectionKeeper) writePump() {
 				continue
 			}
 			var writer io.WriteCloser
-			switch message.(type) {
+			switch t := message.(type) {
 			case TextMessage:
 				//fmt.Println("TextMessage")
 				writer, err = c.conn.NextWriter(websocket.TextMessage)
 			case BinaryMessage:
 				//fmt.Println("BinaryMessage")
 				writer, err = c.conn.NextWriter(websocket.BinaryMessage)
+			default:
+				c.Logger.Errorf("not supported message type: %T", t)
+				continue
+
 			}
 
 			if err != nil {
@@ -369,7 +394,7 @@ func (c *connectionKeeper) CloseConnection() error {
 		return nil
 	}
 
-	c.Logger.Infof("closing %s websocket Connection... ", c.uuid)
+	c.Logger.Infof("closing %s websocket Connection... \n", c.uuid)
 
 	if !c.writePumpClosed {
 		c.writePumpClosed = true
@@ -387,9 +412,9 @@ func (c *connectionKeeper) CloseConnection() error {
 
 	deleteConnectionWithTargetUUID(c.ConnectionOwner)
 
-	if c.lifeTimeHook != nil {
-		c.lifeTimeHook.OnCloseConnection(c.UUID())
-	}
+	//if c.LifeTimeHook != nil {
+	c.OnCloseConnection(c.UUID())
+	//}
 	return nil
 }
 
@@ -440,20 +465,26 @@ func getConnectionOnTarget(targetUUID string) (ConnectionKeeper, bool) {
 type emptyDispatcher struct {
 }
 
-func (d emptyDispatcher) OnOpenConnection(connectionID string) {
+func (e emptyDispatcher) OnOpenConnection(connectionID string) {
+	return
 }
 
-func (d emptyDispatcher) OnCloseConnection(connectionID string) {
+func (e emptyDispatcher) OnCloseConnection(connectionID string) {
+	return
 }
 
-func (d emptyDispatcher) OnTextMessage(message TextMessage) {
+func (e emptyDispatcher) OnTextMessage(message TextMessage) {
+	return
 }
 
-func (d emptyDispatcher) OnBinaryMessage(message BinaryMessage) {
+func (e emptyDispatcher) OnBinaryMessage(message BinaryMessage) {
+	return
 }
 
-func (d emptyDispatcher) OnPong(message BinaryMessage) {
+func (e emptyDispatcher) OnPong(message string) error {
+	return nil
 }
 
-func (d emptyDispatcher) OnPing(message BinaryMessage) {
+func (e emptyDispatcher) OnPing(message string) error {
+	return nil
 }
