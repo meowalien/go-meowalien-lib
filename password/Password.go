@@ -24,23 +24,22 @@ func HashPassword(password string, pepper string, saltLength int) (string, strin
 	}
 	randomSalt := random.RandomString(saltLength)
 
-
 	bf := bffPool.Get()
 	defer bf.Free()
 	defer bf.Reset()
 
 	var err error
-	_ , err = bf.WriteString(password)
-	if err != nil{
-		return "" , "" , fmt.Errorf("error when WriteString - password :%w" , err)
+	_, err = bf.WriteString(password)
+	if err != nil {
+		return "", "", fmt.Errorf("error when WriteString - password :%w", err)
 	}
-	_ , err = bf.WriteString(pepper)
-	if err != nil{
-		return "" , "" , fmt.Errorf("error when WriteString - pepper :%w" , err)
+	_, err = bf.WriteString(pepper)
+	if err != nil {
+		return "", "", fmt.Errorf("error when WriteString - pepper :%w", err)
 	}
-	_ , err = bf.WriteString(randomSalt)
-	if err != nil{
-		return "" , "" , fmt.Errorf("error when WriteString - randomSalt :%w" , err)
+	_, err = bf.WriteString(randomSalt)
+	if err != nil {
+		return "", "", fmt.Errorf("error when WriteString - randomSalt :%w", err)
 	}
 	bf.Free()
 	bytes, err := bcrypt.GenerateFromPassword(bf.Bytes(), bcrypt.DefaultCost)
@@ -53,7 +52,6 @@ func CheckPasswordHash(password, hash, pepper, salt string, passwordEncryption b
 		return false
 	}
 	if !passwordEncryption {
-
 		return password == hash
 	}
 	err := bcrypt.CompareHashAndPassword([]byte(hash), append([]byte(password), pepper+salt...))

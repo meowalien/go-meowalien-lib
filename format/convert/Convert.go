@@ -26,7 +26,6 @@ func MapstructureOnFormTag(input interface{}, i interface{}) (err error) {
 	return MapstructureOnTag(input, "form", i)
 }
 
-
 func MapstructureOnTag(input interface{}, tag string, i interface{}) (err error) {
 	jsonDecoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Result:  i,
@@ -45,20 +44,21 @@ func MapstructureOnTag(input interface{}, tag string, i interface{}) (err error)
 	return
 }
 
-
-
 func DecodeJsonResponseToStruct(res *http.Response, i interface{}) (err error) {
-	if go_meowalien_lib.SHOW_DEBUG_MESSAGE{
+	if i == nil {
+		return
+	}
+	if go_meowalien_lib.SHOW_DEBUG_MESSAGE {
 		var all []byte
 		all, err = ioutil.ReadAll(res.Body)
 		if err != nil {
 			return errs.WithLine(err)
 		}
 
-		fmt.Println("response: ",string(all))
+		fmt.Println("response: ", string(all))
 
 		err = json.Unmarshal(all, i)
-	}else {
+	} else {
 		decoder := json.NewDecoder(res.Body)
 		err = decoder.Decode(i)
 		if err != nil {

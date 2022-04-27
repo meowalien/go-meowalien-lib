@@ -108,19 +108,19 @@ func JsonRequest(endpoint string, req interface{}) ([]byte, error) {
 	return body, nil
 }
 
-func CloseResponse(response *http.Response) error {
+func closeAndDrainResponseBody(response *http.Response) {
 	defer response.Body.Close()
 	_, err := io.Copy(ioutil.Discard, response.Body)
-	return err
+	if err != nil {
+		log.Println(errs.WithLine(err).Error())
+	}
 }
 
 type PostForm interface {
 	PostForm(url string, data url.Values) (resp *http.Response, err error)
 }
 
-//var SHOW_DEBUG_MESSAGE = false
-
-func PostURLFormWithClient(c PostForm, baseURL string, requestmap map[string]interface{}, rep interface{}) (err error) {
+func PostFormWithClient(c PostForm, baseURL string, requestmap map[string]interface{}, rep interface{}) (err error) {
 	if go_meowalien_lib.SHOW_DEBUG_MESSAGE {
 		fmt.Println("baseURL: ", baseURL)
 		fmt.Println(" ----- ")
@@ -137,7 +137,7 @@ func PostURLFormWithClient(c PostForm, baseURL string, requestmap map[string]int
 		err = errs.WithLine(err)
 		return
 	}
-	defer CloseResponse(res)
+	defer closeAndDrainResponseBody(res)
 
 	if res.StatusCode == http.StatusNoContent {
 		log.Println("StatusNoContent ...")
@@ -165,22 +165,65 @@ type GetForm interface {
 	Get(url string) (resp *http.Response, err error)
 }
 
-func GetURLFormWithClient(c GetForm, baseURL string, requestmap map[string]interface{}, rep interface{}) (err error) {
+func GetFormWithClient(c GetForm, baseURL string, requestmap map[string]interface{}, rep interface{}) (err error) {
 	uu, err := url.Parse(baseURL)
 	qq := uu.Query()
 	for key, value := range requestmap {
 		qq.Add(key, fmt.Sprint(value))
 	}
 	uu.RawQuery = qq.Encode()
-	fmt.Println("get url: ", uu.String())
+	//fmt.Println("get url: ", uu.String())
 	res, err := c.Get(uu.String())
 	if err != nil {
 		err = errs.WithLine(err)
 		return
 	}
-	defer CloseResponse(res)
+	defer closeAndDrainResponseBody(res)
 
 	if res.StatusCode != 200 {
+		var all []byte
+		all, err = ioutil.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+
+		err = errs.WithLine("http response code: %d , rep: %v", res.StatusCode, string(all))
+		return
+	}
+
+	err = convert.DecodeJsonResponseToStruct(res, rep)
+	if err != nil {
+		err = errs.WithLine(err)
+		return
+	}
+	return
+}
+
+type PostBody interface {
+	Post(url string, contentType string, body io.Reader) (resp *http.Response, err error)
+}
+
+func PostJsonWithClient(c PostBody, baseURL string, request interface{}, rep interface{}) (err error) {
+	if go_meowalien_lib.SHOW_DEBUG_MESSAGE {
+		fmt.Println("baseURL: ", baseURL)
+		fmt.Println(" ----- ")
+		fmt.Printf("%+v\n", request)
+		fmt.Println(" ----- ")
+	}
+
+	b, err := json.Marshal(request)
+
+	res, err := c.Post(baseURL, "application/json", bytes.NewReader(b))
+	if err != nil {
+		err = errs.WithLine(err)
+		return
+	}
+	defer closeAndDrainResponseBody(res)
+
+	if res.StatusCode == http.StatusNoContent {
+		log.Println("StatusNoContent ...")
+		return
+	} else if res.StatusCode != 200 {
 		var all []byte
 		all, err = ioutil.ReadAll(res.Body)
 		if err != nil {
