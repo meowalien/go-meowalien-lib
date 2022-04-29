@@ -67,19 +67,20 @@ func (r *correlationIdListener) AddListener(key string, listener ListenerFunc) (
 		err = errs.WithLine("the Listener on key %s is already exist", key)
 		return
 	}
-	r.listenerMap.Range(func(key, value interface{}) bool {
-		fmt.Printf("AddListener - key:%s , val:%+v\n" , key , value)
-		return true
-	})
+	//r.listenerMap.Range(func(key, value interface{}) bool {
+	//	fmt.Printf("AddListener - key:%s , val:%+v\n" , key , value)
+	//	return true
+	//})
 
 	return
 }
 func (r *correlationIdListener) RemoveListener(key string) {
+	fmt.Println("RemoveListener: ", key)
 	r.listenerMap.Delete(key)
-	r.listenerMap.Range(func(key, value interface{}) bool {
-		fmt.Printf("RemoveListener - key:%s , val:%+v\n" , key , value)
-		return true
-	})
+	//r.listenerMap.Range(func(key, value interface{}) bool {
+	//	fmt.Printf("RemoveListener - key:%s , val:%+v\n" , key , value)
+	//	return true
+	//})
 }
 
 func (r *correlationIdListener) getListener(key string) (lf ListenerFunc, ok bool) {

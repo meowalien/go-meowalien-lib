@@ -75,6 +75,8 @@ func newID(s string) string {
 }
 
 func (w *socketKeeper) PushTopic(topic string, skd SocketData, callback ListenerFunc) (err error) {
+	//debug.PrintStack()
+	fmt.Println("PushTopic: ", topic)
 	id := newID(skd.CorrelationId)
 	if callback != nil {
 		err = w.listener.AddListener(id, callback)
