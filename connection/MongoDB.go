@@ -3,10 +3,11 @@ package connection
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"time"
 )
 
 type MangoDBConfiguration struct {
@@ -17,14 +18,9 @@ type MangoDBConfiguration struct {
 	//Database string `json:"Database"`
 }
 
-func CreateMongoDBConnection(dbconf MangoDBConfiguration) (DB *mongo.Client, err error) {
+func (dbconf MangoDBConfiguration) Create() (DB *mongo.Client, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
-	//credential := options.Credential{
-	//	Username: dbconf.User,
-	//	Password: dbconf.Password,
-	//}
 
 	option := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%s/"  , dbconf.User , dbconf.Password, dbconf.Host, dbconf.Port ))//.SetAuth(credential)
 	DB, err = mongo.Connect(ctx, option)
