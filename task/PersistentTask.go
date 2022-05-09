@@ -42,7 +42,7 @@ func (p *PersistentTask) Start() {
 		for {
 			select {
 			case <-p.timmer.C:
-				fmt.Println("PersistentTask time up")
+				//fmt.Println("PersistentTask time up")
 				if !p.hasNew {
 					continue
 				}
