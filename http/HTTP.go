@@ -4,9 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	go_meowalien_lib "github.com/meowalien/go-meowalien-lib"
-	"github.com/meowalien/go-meowalien-lib/errs"
-	"github.com/meowalien/go-meowalien-lib/format/convert"
 	"io"
 	"io/ioutil"
 	"log"
@@ -14,6 +11,10 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	go_meowalien_lib "github.com/meowalien/go-meowalien-lib"
+	"github.com/meowalien/go-meowalien-lib/errs"
+	"github.com/meowalien/go-meowalien-lib/format/convert"
 )
 
 func ConvertFormRequestToMap(r *http.Request) (m map[string]interface{}) {
@@ -187,7 +188,7 @@ func GetFormWithClient(c GetForm, baseURL string, requestmap map[string]interfac
 			return err
 		}
 
-		err = errs.WithLine("http response code: %d , rep: %v", res.StatusCode, string(all))
+		err = errs.WithLine("fail when GET %s , http response code: %d , rep: %v" ,uu.String(), res.StatusCode, string(all))
 		return
 	}
 
