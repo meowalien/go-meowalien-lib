@@ -2,9 +2,10 @@ package amqp_tool
 
 import (
 	"fmt"
+	"sync/atomic"
+
 	"github.com/meowalien/go-meowalien-lib/errs"
 	"github.com/streadway/amqp"
-	"sync/atomic"
 )
 
 type QueueSocket interface {

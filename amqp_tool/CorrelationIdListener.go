@@ -2,9 +2,10 @@ package amqp_tool
 
 import (
 	"fmt"
+	"sync"
+
 	"github.com/meowalien/go-meowalien-lib/errs"
 	"github.com/streadway/amqp"
-	"sync"
 )
 
 func NewCorrelationIdListener(ch *amqp.Channel, queueName string) CorrelationIdListener {
@@ -61,7 +62,7 @@ func (r *correlationIdListener) Start() (err error) {
 
 func (r *correlationIdListener) AddListener(key string, listener ListenerFunc) (err error) {
 
-	fmt.Println("AddListener: ",key)
+	fmt.Println("AddListener: ", key)
 	_, loaded := r.listenerMap.LoadOrStore(key, listener)
 	if loaded {
 		err = errs.WithLine("the Listener on key %s is already exist", key)

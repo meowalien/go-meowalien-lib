@@ -2,8 +2,9 @@ package code
 
 import (
 	"fmt"
-	"github.com/meowalien/go-meowalien-lib/runtime"
 	"log"
+
+	"github.com/meowalien/go-meowalien-lib/runtime"
 )
 
 type Option struct {

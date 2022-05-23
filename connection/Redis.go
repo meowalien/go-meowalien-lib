@@ -2,8 +2,10 @@ package connection
 
 import (
 	"context"
+
 	"github.com/go-redis/redis/v8"
 )
+
 type RedisConfiguration struct {
 	Host     string
 	Port     string
