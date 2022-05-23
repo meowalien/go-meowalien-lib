@@ -11,7 +11,7 @@ func WriteToNewFile(fp string, bin []byte) (err error) {
 	if err != nil {
 		//abs, _ := filepath.Abs(fp)
 		//fmt.Println("abs: ",abs)
-		return fmt.Errorf("error when os.Create: %w", err)
+		return fmt.Errorf("error when os.create: %w", err)
 	}
 	defer func(fo *os.File) {
 		e := fo.Close()
@@ -20,7 +20,7 @@ func WriteToNewFile(fp string, bin []byte) (err error) {
 		}
 	}(fo)
 
-	_,err = fo.Write(bin)
+	_, err = fo.Write(bin)
 	if err != nil {
 		return fmt.Errorf("error Write file: %w", err)
 	}

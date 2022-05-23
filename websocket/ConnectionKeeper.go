@@ -65,6 +65,7 @@ var DefaultCheckOrigin = func(r *http.Request) bool {
 }
 
 type Option struct {
+	PingData []byte
 	Logger                 Logger
 	ReadBufferSize         int
 	WriteBufferSize        int
@@ -186,7 +187,8 @@ func (c *connectionKeeper) Open(writer http.ResponseWriter, request *http.Reques
 		return fmt.Errorf("error when SetReadDeadline: %s", err.Error())
 	}
 
-	c.conn.SetPongHandler(func(string) error {
+	c.conn.SetPongHandler(func(s string) error {
+		//fmt.Println("SetPongHandler: ",s)
 		e := c.conn.SetReadDeadline(time.Now().Add(c.PongWait))
 		if e != nil {
 			return e
@@ -296,6 +298,7 @@ func (c *connectionKeeper) writePump() {
 				continue
 			}
 		case <-pingTimer.C:
+			//fmt.Printf("ping to client %s , %s\n" , c.Option.ConnectionOwner ,string(c.PingData) )
 			pingTimer = time.NewTimer(c.PingPeriod)
 
 			err := c.conn.SetWriteDeadline(time.Now().Add(c.WriteWait))
@@ -303,7 +306,12 @@ func (c *connectionKeeper) writePump() {
 				c.Logger.Errorf("error when SetWriteDeadline: %s", err.Error())
 				continue
 			}
-			if err = c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			if err = c.conn.WriteMessage(websocket.TextMessage,c.PingData); err != nil {
+				c.Logger.Errorf("error when SetWriteDeadline: %s", err.Error())
+				continue
+			}
+
+			if err = c.conn.WriteMessage(websocket.PingMessage,nil); err != nil {
 				c.Logger.Errorf("error when SetWriteDeadline: %s", err.Error())
 				continue
 			}

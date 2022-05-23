@@ -22,8 +22,8 @@ func NewPersistentTask(t PersistentTaskForm) *PersistentTask {
 }
 
 type PersistentTask struct {
-	ptf      PersistentTaskForm
-	timmer   *time.Timer
+	ptf    PersistentTaskForm
+	timmer *time.Timer
 	//lock     sync.Mutex
 	hasNew   bool
 	stopChan chan struct{}
@@ -42,7 +42,7 @@ func (p *PersistentTask) Start() {
 		for {
 			select {
 			case <-p.timmer.C:
-				fmt.Println("PersistentTask time up")
+				//fmt.Println("PersistentTask time up")
 				if !p.hasNew {
 					continue
 				}
