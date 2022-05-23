@@ -5,6 +5,6 @@ type LifeTimeHook interface {
 	OnCloseConnection(connectionID string)
 	OnTextMessage(message TextMessage)
 	OnBinaryMessage(message BinaryMessage)
-	OnPong(message BinaryMessage)
-	OnPing(message BinaryMessage)
+	OnPong(message string)error
+	OnPing(message string)error
 }

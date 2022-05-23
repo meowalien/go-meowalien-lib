@@ -2,12 +2,17 @@ package insertable_linked_list
 
 import (
 	"container/list"
+	"github.com/meowalien/go-meowalien-lib/global_pool"
 	"sync"
 	//"sync/atomic"
 )
 
+var listPool = sync.Pool{New: func() interface{} {
+	return &orderList{list: global_pool.GetList(), mu: global_pool.GetRWMutex()}
+}}
+
 func New() OrderList {
-	return &orderList{list: new(list.List).Init()}
+	return listPool.Get().(*orderList)//&orderList{list: global_pool.GetList(), mu: global_pool.GetRWMutex()}
 }
 
 type OrderList interface {
@@ -15,11 +20,16 @@ type OrderList interface {
 	Front() OrderElement
 	GetAndRemoveLowerThen(cursor int64) (all []OrderElement)
 	GetAllAndRemove() (all []OrderElement)
+	Free()
 }
 
 type orderList struct {
-	mu   sync.Mutex
+	mu   *sync.RWMutex
 	list *list.List
+}
+
+func (l *orderList) Free() {
+	listPool.Put(l)
 }
 
 func (l *orderList) Put(order int64, value interface{}) {

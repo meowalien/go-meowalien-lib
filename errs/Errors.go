@@ -110,3 +110,29 @@ func WithLine(err interface{}, msg ...interface{}) WithLineError {
 		return new(runtime.CallerFileAndLine(1), errors.New(fmt.Sprintf(fmt.Sprintf("%v", e), msg...)))
 	}
 }
+
+
+func WithLineDeap(d int , err interface{}, msg ...interface{}) WithLineError {
+	if err == nil {
+		return nil
+	}
+
+	switch e := err.(type) {
+	case *withLineError:
+		if Loop {
+			return new(runtime.CallerFileAndLine(1), e).Msg(msg...)
+		} else {
+			if msg == nil || len(msg) == 0 {
+				return e
+			} else {
+				return e.Msg(msg...)
+			}
+		}
+	case error:
+		return new(runtime.CallerFileAndLine(d), e).Msg(msg...)
+	case string:
+		return new(runtime.CallerFileAndLine(d), errors.New(fmt.Sprintf(e, msg...)))
+	default:
+		return new(runtime.CallerFileAndLine(d), errors.New(fmt.Sprintf(fmt.Sprintf("%v", e), msg...)))
+	}
+}
