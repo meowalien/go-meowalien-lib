@@ -6,7 +6,7 @@ import (
 )
 
 func NewNullString(s *string) sql.NullString {
-	if s == nil {
+	if s == nil || *s == "" {
 		return sql.NullString{}
 	}
 	return sql.NullString{
@@ -15,9 +15,10 @@ func NewNullString(s *string) sql.NullString {
 	}
 }
 
+var nullTime = time.Time{}
 
 func NewNullTime(t *time.Time) sql.NullTime {
-	if t == nil {
+	if t == nil || *t == nullTime {
 		return sql.NullTime{}
 	}
 	return sql.NullTime{

@@ -4,11 +4,33 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/go-redis/redis/v8"
 	"time"
+
+	"github.com/go-redis/redis/v8"
 )
 
-type RedisClientWrapper redis.Client
+type RedisClientWrapper struct {
+	*redis.Client
+	//io.Closer
+	//redis.Cmdable
+	//*redis.Client
+}
+
+//func (c *RedisClientWrapper) Pipeline() redis.Pipeliner {
+//	panic("implement me")
+//}
+//
+//func (c *RedisClientWrapper) Pipelined(ctx context.Context, fn func(redis.Pipeliner) error) ([]redis.Cmder, error) {
+//	panic("implement me")
+//}
+//
+//func (c *RedisClientWrapper) TxPipelined(ctx context.Context, fn func(redis.Pipeliner) error) ([]redis.Cmder, error) {
+//	panic("implement me")
+//}
+//
+//func (c *RedisClientWrapper) TxPipeline() redis.Pipeliner {
+//	panic("implement me")
+//}
 
 func (c *RedisClientWrapper) SetStruct(ctx context.Context, key string, value interface{}, expiration time.Duration) (string, error) {
 	p, err := json.Marshal(value)
