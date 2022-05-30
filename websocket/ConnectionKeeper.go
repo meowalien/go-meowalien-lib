@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/websocket"
-	"github.com/meowalien/go-meowalien-lib/errs"
-	"github.com/meowalien/go-meowalien-lib/uuid"
 	"io"
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/meowalien/go-meowalien-lib/errs"
+	"github.com/meowalien/go-meowalien-lib/uuid"
 )
 
 type ConnectionKeeper interface {
@@ -278,13 +279,17 @@ func (c *connectionKeeper) readPump() {
 	}
 }
 
+const MaxPingFailCount int = 10
+
 func (c *connectionKeeper) writePump() {
 	pingTimer := time.NewTimer(c.PingPeriod)
+	var pingFailCount int
+loop:
 	for {
 		select {
 		case message, ok := <-c.sentMessageChannel:
 			if !ok {
-				return
+				break loop
 			}
 			err := c.conn.SetWriteDeadline(time.Now().Add(c.WriteWait))
 			if err != nil {
@@ -294,10 +299,8 @@ func (c *connectionKeeper) writePump() {
 			var writer io.WriteCloser
 			switch t := message.(type) {
 			case TextMessage:
-				//fmt.Println("TextMessage")
 				writer, err = c.conn.NextWriter(websocket.TextMessage)
 			case BinaryMessage:
-				//fmt.Println("BinaryMessage")
 				writer, err = c.conn.NextWriter(websocket.BinaryMessage)
 			default:
 				c.Logger.Errorf("not supported message type: %T", t)
@@ -321,18 +324,39 @@ func (c *connectionKeeper) writePump() {
 				continue
 			}
 		case <-pingTimer.C:
-			pingTimer = time.NewTimer(c.PingPeriod)
-
-			err := c.conn.SetWriteDeadline(time.Now().Add(c.WriteWait))
+			err := c.conn.WriteMessage(websocket.PingMessage, nil)
+			if err != nil {
+				c.Logger.Errorf("error when WriteMessage: %s", err.Error())
+				pingFailCount++
+				if pingFailCount < MaxPingFailCount {
+					c.Logger.Debugf("try to ping again, count: %d", pingFailCount)
+					pingTimer.Reset(c.PingPeriod)
+					continue
+				} else {
+					c.Logger.Debugf("ping reach retry limit: %d, closing connection", MaxPingFailCount)
+					break loop
+				}
+			}
+			if pingFailCount != 0 {
+				pingFailCount = 0
+			}
+			err = c.conn.SetWriteDeadline(time.Now().Add(c.WriteWait))
 			if err != nil {
 				c.Logger.Errorf("error when SetWriteDeadline: %s", err.Error())
 				continue
 			}
-			if err = c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				c.Logger.Errorf("error when SetWriteDeadline: %s", err.Error())
-				continue
-			}
+			pingTimer.Reset(c.PingPeriod)
 		}
+	}
+	if !pingTimer.Stop() {
+		select {
+		case <-pingTimer.C:
+		default:
+		}
+	}
+	err := c.CloseConnection()
+	if err != nil {
+		c.Logger.Errorf("error when CloseConnection in writePump: ", err.Error())
 	}
 }
 
