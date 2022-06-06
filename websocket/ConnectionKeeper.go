@@ -86,7 +86,7 @@ type Option struct {
 	ReadMiddleWare func(io.Reader)
 }
 
-func DefaultOption() Option {
+func defaultOption() Option {
 	return Option{
 		ConnectionOwner:              "",
 		AllowMultipleConnection:      true,
@@ -106,12 +106,10 @@ func DefaultOption() Option {
 type OptionModifier func(option *Option)
 
 func NewConnectionKeeper(optionModifier ...OptionModifier) (ck ConnectionKeeper) {
-	//if option == nil {
-	option := DefaultOption()
+	option := defaultOption()
 	for _, modifier := range optionModifier {
 		modifier(&option)
 	}
-	//}
 
 	ck = &connectionKeeper{
 		uuid:   uuid.NewUUID("CK"),
