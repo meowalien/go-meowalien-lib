@@ -1,10 +1,11 @@
 package websocket
 
-type LifeTimeHook interface {
-	OnOpenConnection(connectionID string)
-	OnCloseConnection(connectionID string)
-	OnTextMessage(message TextMessage)
-	OnBinaryMessage(message BinaryMessage)
-	OnPong(message string)error
-	OnPing(message string)error
+type LifeTimeHook struct {
+	OnOpenConnection  func(connectionID string)
+	OnCloseConnection func(connectionID string)
+	OnTextMessage     func(message TextMessage)
+	OnBinaryMessage   func(message BinaryMessage)
+	OnPong            func(message string)
+	OnPing            func(message string)
+	AfterPingEmit     func(count int)
 }
