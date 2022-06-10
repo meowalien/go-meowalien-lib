@@ -65,7 +65,13 @@ func DoURLEncodedFormRequest(endpoint string, req map[string]interface{}) ([]byt
 		}
 	}(res.Body)
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("error StatusCode, res: %v", res.Body)
+		var body = []byte{}
+		body, err = ioutil.ReadAll(res.Body)
+		if err != nil {
+			fmt.Println(errs.WithLine("error when read Body: %w", err).Error())
+		}
+
+		return nil, fmt.Errorf("error StatusCode: %d, res: %v" , res.StatusCode, string(body))
 	}
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
