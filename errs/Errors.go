@@ -42,8 +42,8 @@ func wrapErr(errPre, errNow error) error {
 	if _, ok := errNow.(WithLineError); !ok {
 		errNow = newWithLineError(runtime.CallerFileAndLine(1), errNow)
 	}
-	if _, ok := errPre.(ErrorWrapper); !ok {
+	if _, ok := errPre.(WrapperError); !ok {
 		errPre = newWithLineError(runtime.CallerFileAndLine(1), errPre)
 	}
-	return errPre.(ErrorWrapper).Wrap(errNow)
+	return errPre.(WrapperError).Wrap(errNow)
 }

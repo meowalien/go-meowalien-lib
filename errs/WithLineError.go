@@ -4,7 +4,8 @@ import (
 	"fmt"
 )
 
-type ErrorWrapper interface {
+type WrapperError interface {
+	error
 	Wrap(err error) error
 }
 
