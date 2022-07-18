@@ -31,3 +31,13 @@ func TestWithLine_with_stringf(t *testing.T) {
 	err3 := WithLine("Error {%s} 1", "some string")
 	assert.EqualError(t, err3, "errs/Errs_test.go:31: Error {some string} 1")
 }
+
+func TestWithLineError_Wrap(t *testing.T) {
+	err1 := WithLine("Error 1")
+	err2 := WithLine("Error 2")
+	err3 := WithLine(err1, err2)
+	err := errors.Unwrap(err3)
+	if err != nil {
+		assert.EqualError(t, err, "errs/Errs_test.go:36: Error 1")
+	}
+}
