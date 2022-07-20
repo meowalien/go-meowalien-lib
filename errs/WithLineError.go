@@ -2,10 +2,10 @@ package errs
 
 import "fmt"
 
-type WithLineError interface {
-	error
-	Unwrap() error
-}
+//type WithLineError interface {
+//	error
+//	Unwrap() error
+//}
 
 type withLineError struct {
 	lineCode string
@@ -17,5 +17,11 @@ func (w withLineError) Unwrap() error {
 }
 
 func (w withLineError) Error() string {
-	return fmt.Sprintf("%s: %v", w.lineCode, w.error)
+	//return fmt.Sprintf("%s: %s", w.lineCode, tp.Error())
+	switch tp := w.error.(type) {
+	case withLineError:
+		return fmt.Sprintf("%s: \n\t%s", w.lineCode, tp.Error())
+	default:
+		return fmt.Sprintf("%s: %s", w.lineCode, tp.Error())
+	}
 }

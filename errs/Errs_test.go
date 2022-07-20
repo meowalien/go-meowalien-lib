@@ -69,3 +69,10 @@ func TestWithLine_with_line_code_and_wrap(t *testing.T) {
 	fmt.Println(err3)
 	assert.EqualError(t, err3, "errs/Errs_test.go:68: { \n\tError 1\n\t=> errs/Errs_test.go:68: Error 2 \n}")
 }
+
+func TestWithLine_already_with_line(t *testing.T) {
+	err1 := WithLine("Error 1")
+	err := WithLine(err1)
+	fmt.Println(err)
+	assert.EqualError(t, err, "errs/Errs_test.go:75: \n\terrs/Errs_test.go:74: Error 1")
+}

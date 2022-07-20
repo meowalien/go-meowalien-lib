@@ -18,12 +18,11 @@ WithLine Usage:
 */
 func WithLine(err interface{}, obj ...interface{}) error {
 	callerLine := runtime.CallerFileAndLine(1)
-	var resErr error
-	switch errTp := err.(type) {
-	case error:
+	errorCase := func(errTp error) error {
 		if len(obj) == 0 {
-			resErr = errTp
-			break
+			return errTp
+			//resErr = errTp
+			//break
 		} else if len(obj) == 1 && obj[0] != nil {
 			var obj0 error
 			switch ob := obj[0].(type) {
@@ -32,10 +31,18 @@ func WithLine(err interface{}, obj ...interface{}) error {
 			case string:
 				obj0 = withLineError{lineCode: callerLine, error: errors.New(ob)}
 			}
-			resErr = wrapError(errTp, obj0)
-			break
+			return wrapError(errTp, obj0)
+			//resErr = wrapError(errTp, obj0)
+			//break
 		}
-		resErr = wrapError(errTp, wrapError(errTp, withLineError{lineCode: callerLine, error: errors.New(fmt.Sprint(obj...))}))
+		return wrapError(errTp, wrapError(errTp, withLineError{lineCode: callerLine, error: errors.New(fmt.Sprint(obj...))}))
+	}
+	var resErr error
+	switch errTp := err.(type) {
+	case withLineError:
+		return withLineError{lineCode: callerLine, error: errorCase(errTp)}
+	case error:
+		resErr = errorCase(errTp)
 		break
 	case string:
 		if len(obj) == 0 {
