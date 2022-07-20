@@ -18,7 +18,16 @@ WithLine Usage:
 */
 func WithLine(err interface{}, obj ...interface{}) error {
 	if err == nil {
-		return nil
+		if len(obj) != 1 {
+			if len(obj) > 1 {
+				panic("WithLine: obj must be one or zero")
+			}
+			return nil
+		}
+		if e, ok := obj[0].(error); ok {
+			err = e
+			obj = obj[1:]
+		}
 	}
 	callerLine := runtime.CallerFileAndLine(1)
 	var resErr error

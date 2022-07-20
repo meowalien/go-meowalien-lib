@@ -76,3 +76,10 @@ func TestWithLine_already_with_line(t *testing.T) {
 	fmt.Println(err)
 	assert.EqualError(t, err, "errs/Errs_test.go:75: \n\terrs/Errs_test.go:74: Error 1")
 }
+
+func TestWithLine_nil_parent_case(t *testing.T) {
+	var err1 error
+	err2 := errors.New("Error 2")
+	err3 := WithLine(err1, err2)
+	fmt.Println(err3)
+}
