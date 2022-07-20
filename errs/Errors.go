@@ -18,48 +18,39 @@ WithLine Usage:
 */
 func WithLine(err interface{}, obj ...interface{}) error {
 	callerLine := runtime.CallerFileAndLine(1)
-	errorCase := func(errTp error) error {
-		if len(obj) == 0 {
-			return errTp
-			//resErr = errTp
-			//break
-		} else if len(obj) == 1 && obj[0] != nil {
-			var obj0 error
-			switch ob := obj[0].(type) {
-			case error:
-				obj0 = ob
-			case string:
-				obj0 = withLineError{lineCode: callerLine, error: errors.New(ob)}
-			}
-			return wrapError(errTp, obj0)
-			//resErr = wrapError(errTp, obj0)
-			//break
-		}
-		return wrapError(errTp, wrapError(errTp, withLineError{lineCode: callerLine, error: errors.New(fmt.Sprint(obj...))}))
-	}
-	var resErr error
 	switch errTp := err.(type) {
-	case withLineError:
-		return withLineError{lineCode: callerLine, error: errorCase(errTp)}
 	case error:
-		resErr = errorCase(errTp)
-		break
+		return withLineError{lineCode: callerLine, error: errorCase(callerLine, errTp, obj)}
 	case string:
+		var resErr error
 		if len(obj) == 0 {
 			resErr = errors.New(errTp)
-			break
 		} else if strings.Contains(errTp, "%") {
 			resErr = fmt.Errorf(errTp, obj...)
-			break
 		} else {
 			resErr = errors.New(fmt.Sprint(append([]interface{}{errTp + " "}, obj...)...))
-			break
 		}
+		return withLineError{lineCode: callerLine, error: resErr}
 	default:
-		resErr = errors.New(fmt.Sprint(append([]interface{}{errTp}, obj...)...))
-		break
+		resErr := errors.New(fmt.Sprint(append([]interface{}{errTp}, obj...)...))
+		return withLineError{lineCode: callerLine, error: resErr}
 	}
-	return withLineError{lineCode: callerLine, error: resErr}
+}
+
+func errorCase(callerLine string, errTp error, obj []interface{}) error {
+	if len(obj) == 0 {
+		return errTp
+	} else if len(obj) == 1 && obj[0] != nil {
+		var obj0 error
+		switch ob := obj[0].(type) {
+		case error:
+			obj0 = ob
+		case string:
+			obj0 = withLineError{lineCode: callerLine, error: errors.New(ob)}
+		}
+		return wrapError(errTp, obj0)
+	}
+	return wrapError(errTp, wrapError(errTp, withLineError{lineCode: callerLine, error: errors.New(fmt.Sprint(obj...))}))
 }
 
 func wrapError(errParent error, errChild error) error {
