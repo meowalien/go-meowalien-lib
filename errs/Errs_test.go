@@ -57,3 +57,15 @@ func TestWithLineError_Wrap(t *testing.T) {
 		assert.EqualError(t, err, "errs/Errs_test.go:46: Error 1")
 	}
 }
+
+func TestWithLine_with_line_code(t *testing.T) {
+	err3 := WithLine(errors.New("Error 1"))
+	fmt.Println(err3)
+	assert.EqualError(t, err3, "errs/Errs_test.go:62: Error 1")
+}
+
+func TestWithLine_with_line_code_and_wrap(t *testing.T) {
+	err3 := WithLine(errors.New("Error 1"), "Error 2")
+	fmt.Println(err3)
+	assert.EqualError(t, err3, "errs/Errs_test.go:68: { \n\tError 1\n\t=> errs/Errs_test.go:68: Error 2 \n}")
+}

@@ -1,66 +1,60 @@
 package errs
 
 import (
+	"errors"
 	"fmt"
 	"github.com/meowalien/go-meowalien-lib/runtime"
 	"strings"
 )
 
-type withLineError struct {
-	lineCode string
-	error
-}
-
-func (w withLineError) Unwrap() error {
-	return w.error
-}
-
-func (w withLineError) Error() string {
-	return fmt.Sprintf("%s: %v", w.lineCode, w.error)
-}
-
-func addLineFormat(lineCode string, err interface{}) withLineError {
-	switch errTp := err.(type) {
-	case withLineError:
-		return withLineError{lineCode: lineCode, error: errTp}
-	case error:
-		return withLineError{lineCode: lineCode, error: errTp}
-	default:
-		return withLineError{lineCode: lineCode, error: fmt.Errorf("%v", err)}
-	}
-}
-
-func wrapErrorFormat(errParent error, errChild error) error {
-	return fmt.Errorf("{ \n\t%w\n\t=> %s \n}", errParent, errChild.Error())
-}
-
+/*
+WithLine Usage:
+	1. WithLine(err) -> add caller line code to err
+	2. WithLine(err1, err2) -> wrap err2 into err1 and add caller line code
+	3. WithLine(err1, string1) -> make a withlineError of string1 and wrap it to err1
+	4. WithLine(string1) -> make a withlineError of string1
+	5. WithLine(string1 , obj ...) -> make a withlineError of fmt.Errorf(string1, obj...)
+	6. WithLine(string1_with_no_"%" , obj ...) -> make a withlineError of fmt.Sprint(string1, obj...)
+*/
 func WithLine(err interface{}, obj ...interface{}) error {
 	callerLine := runtime.CallerFileAndLine(1)
+	var resErr error
 	switch errTp := err.(type) {
 	case error:
 		if len(obj) == 0 {
-			return addLineFormat(callerLine, errTp)
+			resErr = errTp
+			break
 		} else if len(obj) == 1 && obj[0] != nil {
 			var obj0 error
 			switch ob := obj[0].(type) {
 			case error:
 				obj0 = ob
 			case string:
-				obj0 = addLineFormat(callerLine, ob)
+				obj0 = withLineError{lineCode: callerLine, error: errors.New(ob)}
 			}
-			return addLineFormat(callerLine, wrapErrorFormat(errTp, obj0))
+			resErr = wrapError(errTp, obj0)
+			break
 		}
-		return addLineFormat(callerLine, wrapErrorFormat(errTp, addLineFormat(callerLine, fmt.Sprint(obj...))))
+		resErr = wrapError(errTp, wrapError(errTp, withLineError{lineCode: callerLine, error: errors.New(fmt.Sprint(obj...))}))
+		break
 	case string:
-		if strings.Contains(errTp, "%") {
-			return addLineFormat(callerLine, fmt.Sprintf(errTp, obj...))
-		}
 		if len(obj) == 0 {
-			return addLineFormat(callerLine, errTp)
+			resErr = errors.New(errTp)
+			break
+		} else if strings.Contains(errTp, "%") {
+			resErr = fmt.Errorf(errTp, obj...)
+			break
+		} else {
+			resErr = errors.New(fmt.Sprint(append([]interface{}{errTp + " "}, obj...)...))
+			break
 		}
-		return addLineFormat(callerLine, fmt.Sprint(append([]interface{}{errTp + " "}, obj...)...))
-
 	default:
-		return addLineFormat(callerLine, fmt.Sprint(append([]interface{}{errTp}, obj...)...))
+		resErr = errors.New(fmt.Sprint(append([]interface{}{errTp}, obj...)...))
+		break
 	}
+	return withLineError{lineCode: callerLine, error: resErr}
+}
+
+func wrapError(errParent error, errChild error) error {
+	return fmt.Errorf("{ \n\t%w\n\t=> %s \n}", errParent, errChild.Error())
 }
