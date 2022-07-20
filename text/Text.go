@@ -73,7 +73,6 @@ func ColorSting(s string, color ColorCode) string {
 	return fmt.Sprintf("\033[%dm%s\033[00m", color, s)
 }
 
-
 func IndexOfTimes(s string, target string, times int) int {
 	if times == 1 {
 		return strings.Index(s, target)
@@ -84,7 +83,7 @@ func IndexOfTimes(s string, target string, times int) int {
 		if find == -1 {
 			times--
 			break
-		}else if find+1 >= len(s) {
+		} else if find+1 >= len(s) {
 			break
 		}
 		s = s[find+1:]

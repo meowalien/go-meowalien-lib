@@ -1,6 +1,5 @@
 package pointer
 
-func ToInterfacePointer(i interface{}) *interface{}{
-	x:= interface{}(i)
-	return &x
+func ToInterfacePointer(i interface{}) *interface{} {
+	return &i
 }

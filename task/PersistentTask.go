@@ -35,7 +35,7 @@ func (p *PersistentTask) Start() {
 	//fmt.Println("p.ptf.ExecutionInterval: ", p.ptf.ExecutionInterval)
 	p.timmer = time.NewTimer(p.ptf.ExecutionInterval)
 	//p.lock = sync.Mutex{}
-	p.stopChan = make(chan struct{}, 0)
+	p.stopChan = make(chan struct{})
 	p.hasNew = true
 	go func() {
 	loop:

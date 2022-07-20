@@ -7,7 +7,7 @@ import (
 
 var errInvalidWrite = errors.New("invalid write result")
 
-func CopyBufferWithCallback(dst io.Writer, src io.Reader, buf []byte, callback func(count int,written int64)) (written int64, err error) {
+func CopyBufferWithCallback(dst io.Writer, src io.Reader, buf []byte, callback func(count int, written int64)) (written int64, err error) {
 	//if wt, ok := src.(io.WriterTo); ok {
 	//	return wt.WriteTo(dst)
 	//}
@@ -47,9 +47,9 @@ func CopyBufferWithCallback(dst io.Writer, src io.Reader, buf []byte, callback f
 			break
 		}
 
-		count ++
-		if callback != nil{
-			callback(count , written)
+		count++
+		if callback != nil {
+			callback(count, written)
 		}
 	}
 	return written, err

@@ -15,11 +15,13 @@ func FileMod(filename string) (fs.FileMode, error) {
 }
 
 func FileExist(filename string) (bool, error) {
-	if _, err := os.Stat(filename); err == nil {
+	_, err := os.Stat(filename)
+	switch {
+	case err == nil:
 		return true, nil
-	} else if errors.Is(err, os.ErrNotExist) {
+	case errors.Is(err, os.ErrNotExist):
 		return false, nil
-	} else {
+	default:
 		return false, err
 	}
 }

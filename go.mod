@@ -14,6 +14,7 @@ require (
 	github.com/shopspring/decimal v1.3.1
 	github.com/spf13/viper v1.10.1
 	github.com/streadway/amqp v1.0.0
+	github.com/stretchr/testify v1.7.0
 	go.mongodb.org/mongo-driver v1.8.4
 	go.uber.org/zap v1.19.1
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3

@@ -187,7 +187,7 @@ linters-settings:
         paramsOnly: true
       # WAYNE ask if this is necessary
       rangeValCopy:
-        sizeThreshold: 32
+        sizeThreshold: 128
   revive:
     rules:
       - name: var-naming
@@ -222,7 +222,9 @@ linters:
     - varcheck
   enable-all: false
   disable:
+    - scopelint
     - contextcheck
+  #   - prealloc
   #   - prealloc
 #  disable-all: true
   presets:

@@ -7,6 +7,7 @@ var waitGroupPool = sync.Pool{
 		return &sync.WaitGroup{}
 	},
 }
+
 func GetWaitGroup() *sync.WaitGroup {
 	return waitGroupPool.Get().(*sync.WaitGroup)
 }

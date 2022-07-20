@@ -63,11 +63,6 @@ type socketKeeper struct {
 	exchangeName string
 }
 
-func (w *socketKeeper) removeListener(key string) {
-	fmt.Println("removeListener: ", key)
-	w.listener.RemoveListener(key)
-}
-
 var count uint64
 
 func newID(s string) string {

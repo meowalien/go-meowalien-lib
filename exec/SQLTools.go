@@ -22,9 +22,9 @@ func (m JsonTypeStruct) Value() (driver.Value, error) {
 
 func (m *JsonTypeStruct) Scan(src interface{}) error {
 	var source []byte
-	switch src.(type) {
+	switch s := src.(type) {
 	case []uint8:
-		source = src.([]byte)
+		source = s
 	case nil:
 		return nil
 	default:

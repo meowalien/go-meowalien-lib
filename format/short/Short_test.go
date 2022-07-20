@@ -14,19 +14,16 @@ func TestShort(t *testing.T) {
 		//fmt.Println("raw: ",i)
 		//fmt.Println("ax: ",ax)
 		if ax != int64(i) {
-			t.Errorf("error ax != rd: %d != %d" , ax , i)
+			t.Errorf("error ax != rd: %d != %d", ax, i)
 		}
 	}
-
-
-
 
 	for i := 0; i < 10000; i++ {
 		rd := rand.Int63()
 		hx := MaxShort(rd)
 		ax := DeMaxShort(hx)
 		if ax != rd {
-			t.Errorf("error ax != rd: %d != %d" , ax , rd)
+			t.Errorf("error ax != rd: %d != %d", ax, rd)
 		}
 	}
 }

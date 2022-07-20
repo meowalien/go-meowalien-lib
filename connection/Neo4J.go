@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/neo4j/neo4j-go-driver/neo4j"
 )
+
 type Neo4JConfiguration struct {
 	Host     string
 	Port     string

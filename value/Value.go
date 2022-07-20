@@ -39,7 +39,7 @@ reserved = 實際存儲的倍數
 */
 func New(number int64, base int64, reserved int64, opt ...Option) Value {
 	var op Option
-	if opt == nil || len(opt) == 0 {
+	if len(opt) == 0 {
 		op = DefaultOption()
 	}
 	return &value{

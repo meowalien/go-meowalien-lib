@@ -22,7 +22,7 @@ func TestList(t *testing.T) {
 	}
 
 	for _, element := range lst {
-		fmt.Println("element: ",element)
+		fmt.Println("element: ", element)
 	}
 
 }

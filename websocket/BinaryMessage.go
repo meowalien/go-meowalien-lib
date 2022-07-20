@@ -7,8 +7,6 @@ import (
 	"io/ioutil"
 )
 
-
-
 type BinaryMessage interface {
 	Message
 	Binary() ([]byte, error)
@@ -20,7 +18,7 @@ type binaryMessage struct {
 	binaryCatch []byte
 }
 
-func (m binaryMessage) Binary() ([]byte, error) {
+func (m *binaryMessage) Binary() ([]byte, error) {
 	if m.binaryCatch != nil {
 		return m.binaryCatch, nil
 	}

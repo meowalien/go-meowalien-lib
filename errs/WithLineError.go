@@ -18,7 +18,7 @@ func (w withLineError) Unwrap() error {
 
 func (w withLineError) Error() string {
 	//return fmt.Sprintf("%s: %s", w.lineCode, tp.Error())
-	switch tp := w.error.(type) {
+	switch tp := w.error.(type) { //nolint:errorlint
 	case withLineError:
 		return fmt.Sprintf("%s: \n\t%s", w.lineCode, tp.Error())
 	default:

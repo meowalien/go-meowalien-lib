@@ -6,6 +6,7 @@ import (
 	"time"
 	"unsafe"
 )
+
 var snowflakeNode *snowflake.Node
 
 // 節點編號
@@ -24,19 +25,19 @@ func Snowflake() snowflake.ID {
 	return snowflakeNode.Generate()
 }
 
-func RandInt64(min int64 , max int64) int64 {
-	return min + rand.Int63n(max - min)
+func RandInt64(min int64, max int64) int64 {
+	return min + rand.Int63n(max-min)
 }
 
 const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
 var src = rand.NewSource(time.Now().UnixNano())
+
 const (
 	letterIdxBits = 6                    // 6 bits to represent a letter index
 	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
 	letterIdxMax  = 63 / letterIdxBits   // # of letter indices fitting in 63 bits
 )
-
 
 func RandomString(n int) string {
 	b := make([]byte, n)
@@ -53,5 +54,5 @@ func RandomString(n int) string {
 		remain--
 	}
 
-	return *(*string)(unsafe.Pointer(&b))
+	return *(*string)(unsafe.Pointer(&b)) //nolint:gosec
 }

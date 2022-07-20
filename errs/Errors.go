@@ -24,9 +24,10 @@ func WithLine(err interface{}, obj ...interface{}) error {
 	var resErr error
 	switch errTp := err.(type) {
 	case error:
-		if len(obj) == 0 {
+		switch {
+		case len(obj) == 0:
 			resErr = errTp
-		} else if len(obj) == 1 && obj[0] != nil {
+		case len(obj) == 1 && obj[0] != nil:
 			var obj0 error
 			switch ob := obj[0].(type) {
 			case error:
@@ -35,15 +36,16 @@ func WithLine(err interface{}, obj ...interface{}) error {
 				obj0 = withLineError{lineCode: callerLine, error: errors.New(ob)}
 			}
 			resErr = wrapError(errTp, obj0)
-		} else {
+		default:
 			resErr = wrapError(errTp, wrapError(errTp, withLineError{lineCode: callerLine, error: errors.New(fmt.Sprint(obj...))}))
 		}
 	case string:
-		if len(obj) == 0 {
+		switch {
+		case len(obj) == 0:
 			resErr = errors.New(errTp)
-		} else if strings.Contains(errTp, "%") {
+		case strings.Contains(errTp, "%"):
 			resErr = fmt.Errorf(errTp, obj...)
-		} else {
+		default:
 			resErr = errors.New(fmt.Sprint(append([]interface{}{errTp + " "}, obj...)...))
 		}
 	default:

@@ -6,30 +6,29 @@ import (
 )
 
 func New(gap time.Duration) FrequencyLimiter {
-return &frequencyLimit{gap:gap}
+	return &frequencyLimit{gap: gap}
 }
 
 type FrequencyLimiter interface {
 	Do(key interface{}, f func())
-	Trigger(key interface{})bool
+	Trigger(key interface{}) bool
 }
 
 type frequencyLimit struct {
-	m sync.Map
+	m   sync.Map
 	gap time.Duration
 }
 
 func (f *frequencyLimit) Trigger(key interface{}) bool {
-	_ , loaded := f.m.LoadOrStore(key , nil)
-	time.AfterFunc(f.gap , func() {
+	_, loaded := f.m.LoadOrStore(key, nil)
+	time.AfterFunc(f.gap, func() {
 		f.m.Delete(key)
 	})
 	return !loaded
 }
 
 func (f *frequencyLimit) Do(key interface{}, fc func()) {
-	if f.Trigger(key){
+	if f.Trigger(key) {
 		fc()
 	}
 }
-

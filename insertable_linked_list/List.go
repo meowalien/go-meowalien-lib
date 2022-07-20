@@ -12,7 +12,7 @@ var listPool = sync.Pool{New: func() interface{} {
 }}
 
 func New() OrderList {
-	return listPool.Get().(*orderList)//&orderList{list: global_pool.GetList(), mu: global_pool.GetRWMutex()}
+	return listPool.Get().(*orderList) //&orderList{list: global_pool.GetList(), mu: global_pool.GetRWMutex()}
 }
 
 type OrderList interface {
@@ -54,7 +54,7 @@ func (l *orderList) GetAndRemoveLowerThen(cursor int64) (all []OrderElement) {
 		}
 
 		nextCheckEle := checkEle.Next()
-		all = append(all, checkEle.(OrderElement))
+		all = append(all, checkEle)
 		l.Remove(checkEle)
 		checkEle = nextCheckEle
 		continue
@@ -66,7 +66,7 @@ func (l *orderList) GetAndRemoveLowerThen(cursor int64) (all []OrderElement) {
 func (l *orderList) GetAllAndRemove() (all []OrderElement) {
 	for checkEle := l.Front(); checkEle != nil; {
 		nextCheckEle := checkEle.Next()
-		all = append(all, checkEle.(OrderElement))
+		all = append(all, checkEle)
 		l.Remove(checkEle)
 		checkEle = nextCheckEle
 		continue

@@ -13,23 +13,23 @@ type HttpServeAble interface {
 }
 
 type Request struct {
-	Router HttpServeAble
-	Method string
+	Router   HttpServeAble
+	Method   string
 	Path     string
 	Body     interface{}
 	Response interface{}
 }
 
-func NewTestRequest(req Request) (httpCode int ,err error) {
-	bodyBytes , err := json.Marshal(req.Body)
+func NewTestRequest(req Request) (httpCode int, err error) {
+	bodyBytes, err := json.Marshal(req.Body)
 	if err != nil {
-		err =errs.WithLine(err)
+		err = errs.WithLine(err)
 		return
 	}
 
 	response, err := http.NewRequest(req.Method, req.Path, bytes.NewReader(bodyBytes))
 	if err != nil {
-		err= errs.WithLine(err)
+		err = errs.WithLine(err)
 		return
 	}
 
@@ -37,9 +37,8 @@ func NewTestRequest(req Request) (httpCode int ,err error) {
 	req.Router.ServeHTTP(recorder, response)
 	err = json.NewDecoder(recorder.Body).Decode(req.Response)
 	if err != nil {
-		err= errs.WithLine(err)
+		err = errs.WithLine(err)
 		return
 	}
-	return recorder.Code , nil
+	return recorder.Code, nil
 }
-

@@ -45,9 +45,9 @@ func init() {
 		doappend(i)
 	}
 }
+
 var maxShortMap []byte
 var demaxShortMap = map[uint8]int64{}
-
 
 func init() {
 	var i byte = 48
@@ -96,7 +96,7 @@ func DeShortWithMap(n string, mp map[uint8]int64) int64 {
 
 	d := int64(0)
 	for i := l - 1; i >= 0; i-- {
-		d += mp[n[i]] *int64( math.Pow(max, float64(i)))
+		d += mp[n[i]] * int64(math.Pow(max, float64(i)))
 	}
 	return d
 }
@@ -112,6 +112,7 @@ func MaxShort(n int64) string {
 func DeMaxShort(n string) int64 {
 	return DeShortWithMap(n, demaxShortMap)
 }
+
 var bytePool = buffer.NewPool()
 
 func ShortWithMap(n int64, mp []byte) string {
@@ -124,8 +125,8 @@ func ShortWithMap(n int64, mp []byte) string {
 	defer bt.Free()
 	defer bt.Reset()
 
-	for q := n; q > 0; q = q / max {
-		px := q%max
+	for q := n; q > 0; q /= max {
+		px := q % max
 		b := mp[px]
 
 		err := bt.WriteByte(b)

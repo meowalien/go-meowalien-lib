@@ -1,7 +1,7 @@
 package hash
 
 import (
-	"crypto/md5"
+	"crypto/md5" //nolint:gosec
 	"encoding/hex"
 	"fmt"
 	"go.uber.org/zap/buffer"
@@ -9,7 +9,7 @@ import (
 )
 
 func Md5Hash(b []byte) []byte {
-	md5Ctx := md5.New()
+	md5Ctx := md5.New() //nolint:gosec
 	md5Ctx.Write(b)
 	return md5Ctx.Sum(nil)
 }
@@ -30,7 +30,9 @@ loop:
 		}
 		str = append(str, k)
 	}
-	if str == nil{return ""}
+	if str == nil {
+		return ""
+	}
 
 	sort.Strings(str)
 

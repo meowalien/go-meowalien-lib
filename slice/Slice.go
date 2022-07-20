@@ -83,7 +83,6 @@ func ToInterfaceSlice(sl interface{}) (ans []interface{}) {
 	}
 }
 
-
 func reflectInterfaceSlice(slice interface{}) []interface{} {
 	s := reflect.ValueOf(slice)
 	if s.Kind() != reflect.Slice {

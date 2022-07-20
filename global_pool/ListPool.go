@@ -5,13 +5,14 @@ import (
 	"sync"
 )
 
-var listPool = sync.Pool{New: func() interface{}{
+var listPool = sync.Pool{New: func() interface{} {
 	return list.New()
 }}
+
 func GetList() *list.List {
 	return listPool.Get().(*list.List)
 }
 
-func PutList(b *list.List ) {
+func PutList(b *list.List) {
 	listPool.Put(b)
 }

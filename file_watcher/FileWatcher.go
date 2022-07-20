@@ -17,13 +17,12 @@ type FileWatcher interface {
 }
 
 type fileWatcher struct {
-	lock sync.RWMutex
+	lock            sync.RWMutex
 	allWatchingFile map[string]watchingFile
 	*fsnotify.Watcher
 	onFileUpDate func(file string)
 	onFileRemove func(file string)
 }
-
 
 type watchingFile struct {
 	fileName string
@@ -31,19 +30,19 @@ type watchingFile struct {
 	realFile string
 }
 
-func (f *fileWatcher)Remove(filename string) (err error) {
+func (f *fileWatcher) Remove(filename string) (err error) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	cleanFilePath := filepath.Clean(filename)
-	wFile , exist := f.allWatchingFile[cleanFilePath]
-	if !exist{
+	wFile, exist := f.allWatchingFile[cleanFilePath]
+	if !exist {
 		return
 	}
 	delete(f.allWatchingFile, cleanFilePath)
 	err = f.Watcher.Remove(wFile.dir)
-	if err != nil{
-	    err = errs.WithLine(err)
-	    return
+	if err != nil {
+		err = errs.WithLine(err)
+		return
 	}
 	return
 }
@@ -120,14 +119,13 @@ func New(onFileUpDate func(file string), onFileRemove func(file string)) (watche
 		return
 	}
 	watcher = &fileWatcher{
-		Watcher:      w,
-		allWatchingFile : map[string]watchingFile{},
-		onFileUpDate: onFileUpDate,
-		onFileRemove: onFileRemove,
+		Watcher:         w,
+		allWatchingFile: map[string]watchingFile{},
+		onFileUpDate:    onFileUpDate,
+		onFileRemove:    onFileRemove,
 	}
 	return
 }
-
 
 //func NewWatcher(filename string, onFileUpDate func(file string), onFileRemove func(file string)) (newWatcher file_watcher.FileWatcher, err error) {
 //	watcher, err := fsnotify.NewWatcher()

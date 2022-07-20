@@ -21,7 +21,7 @@ type Client struct {
 }
 
 func (b *Client) Publish(msg interface{}) {
-	b.broker.Publish(msg , b)
+	b.broker.Publish(msg, b)
 }
 
 func (b *Client) Filter() Filter {
@@ -47,7 +47,6 @@ func (b *Client) close() {
 	default:
 		close(b.C)
 	}
-	return
 }
 
 func (b *Client) Close() {

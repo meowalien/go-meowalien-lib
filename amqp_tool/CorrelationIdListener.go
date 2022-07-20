@@ -35,7 +35,8 @@ func (r *correlationIdListener) Start() (err error) {
 		return
 	}
 	go func() {
-		for delivery := range div {
+		for d := range div {
+			delivery := d
 			listener, ok := r.getListener(delivery.CorrelationId)
 			if ok {
 				listener(delivery, func() {

@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -17,8 +18,8 @@ import (
 	"github.com/meowalien/go-meowalien-lib/format/convert"
 )
 
-func ConvertFormRequestToMap(r *http.Request) (m map[string]interface{}) {
-	cMap := make(map[string]interface{})
+func ConvertFormRequestToMap(r *http.Request) (cMap map[string]interface{}, err error) {
+	cMap = make(map[string]interface{})
 	switch r.Method {
 	case "GET":
 		query := r.URL.Query()
@@ -27,12 +28,12 @@ func ConvertFormRequestToMap(r *http.Request) (m map[string]interface{}) {
 		}
 
 	case "POST":
-		r.ParseForm()
+		err = r.ParseForm()
 		for k, v := range r.Form {
 			cMap[k] = v[0]
 		}
 	}
-	return cMap
+	return
 }
 
 // 發送urlencodedFORM
@@ -45,7 +46,7 @@ func DoURLEncodedFormRequest(endpoint string, req map[string]interface{}) ([]byt
 	dataEncode := data.Encode()
 
 	client := &http.Client{}
-	r, err := http.NewRequest("POST", endpoint, strings.NewReader(dataEncode)) // URL-encoded payload
+	r, err := http.NewRequestWithContext(context.TODO(), "POST", endpoint, strings.NewReader(dataEncode)) // URL-encoded payload
 	if err != nil {
 		return nil, fmt.Errorf("error when NewRequest: %w", err)
 	}
@@ -53,25 +54,25 @@ func DoURLEncodedFormRequest(endpoint string, req map[string]interface{}) ([]byt
 	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	r.Header.Add("Content-Length", strconv.Itoa(len(dataEncode)))
 
-	res, err := client.Do(r)
+	res, err := client.Do(r) //nolint:bodyclose
 	if err != nil {
 		return nil, fmt.Errorf("error when client.Start: %w", err)
 	}
 
-	defer func(Body io.ReadCloser) {
+	defer func(Body io.Closer) {
 		e := Body.Close()
 		if e != nil {
 			log.Printf("error when close Body: %s\n", e.Error())
 		}
 	}(res.Body)
 	if res.StatusCode != http.StatusOK {
-		var body = []byte{}
+		var body []byte
 		body, err = ioutil.ReadAll(res.Body)
 		if err != nil {
 			fmt.Println(errs.WithLine("error when read Body: %w", err).Error())
 		}
 
-		return nil, fmt.Errorf("error StatusCode: %d, res: %v" , res.StatusCode, string(body))
+		return nil, fmt.Errorf("error StatusCode: %d, res: %v", res.StatusCode, string(body))
 	}
 	body, err := ioutil.ReadAll(res.Body)
 	if err != nil {
@@ -87,17 +88,20 @@ func JsonRequest(endpoint string, req interface{}) ([]byte, error) {
 		return nil, errs.WithLine(err)
 	}
 
-	r, err := http.NewRequest("POST", endpoint, bytes.NewReader(jj)) // URL-encoded payload
+	r, err := http.NewRequestWithContext(context.TODO(), "POST", endpoint, bytes.NewReader(jj))
+	if err != nil {
+		return nil, errs.WithLine(err)
+	}
 	r.Header.Add("Content-Type", "application/json")
 	r.Header.Add("Content-Length", strconv.Itoa(len(jj)))
 
 	client := &http.Client{}
-	res, err := client.Do(r)
+	res, err := client.Do(r) //nolint:bodyclose
 	if err != nil {
 		return nil, errs.WithLine(err)
 	}
 
-	defer func(Body io.ReadCloser) {
+	defer func(Body io.Closer) {
 		e := Body.Close()
 		if e != nil {
 			log.Printf("error when close Body: %s\n", e.Error())
@@ -115,12 +119,18 @@ func JsonRequest(endpoint string, req interface{}) ([]byte, error) {
 	return body, nil
 }
 
-func closeAndDrainResponseBody(response *http.Response) {
-	defer response.Body.Close()
-	_, err := io.Copy(ioutil.Discard, response.Body)
+func closeAndDrainResponseBody(response *http.Response) (err error) {
+	defer func(body io.Closer) {
+		err1 := body.Close()
+		if err1 != nil {
+			err = errs.WithLine(err, err1)
+		}
+	}(response.Body)
+	_, err = io.Copy(ioutil.Discard, response.Body)
 	if err != nil {
 		log.Println(errs.WithLine(err).Error())
 	}
+	return
 }
 
 type PostForm interface {
@@ -139,12 +149,17 @@ func PostFormWithClient(c PostForm, baseURL string, requestmap map[string]interf
 
 	form := convert.ConvertMapToURLForm(requestmap)
 
-	res, err := c.PostForm(baseURL, form)
+	res, err := c.PostForm(baseURL, form) //nolint:bodyclose
 	if err != nil {
 		err = errs.WithLine(err)
 		return
 	}
-	defer closeAndDrainResponseBody(res)
+	defer func(res *http.Response) {
+		err1 := closeAndDrainResponseBody(res)
+		if err1 != nil {
+			err = errs.WithLine(err, err1)
+		}
+	}(res)
 
 	if res.StatusCode == http.StatusNoContent {
 		log.Println("StatusNoContent ...")
@@ -180,13 +195,17 @@ func GetFormWithClient(c GetForm, baseURL string, requestmap map[string]interfac
 	}
 	uu.RawQuery = qq.Encode()
 	//fmt.Println("get url: ", uu.String())
-	res, err := c.Get(uu.String())
+	res, err := c.Get(uu.String()) //nolint:bodyclose
 	if err != nil {
 		err = errs.WithLine(err)
 		return
 	}
-	defer closeAndDrainResponseBody(res)
-
+	defer func(res *http.Response) {
+		err1 := closeAndDrainResponseBody(res)
+		if err1 != nil {
+			err = errs.WithLine(err, err1)
+		}
+	}(res)
 	if res.StatusCode != 200 {
 		var all []byte
 		all, err = ioutil.ReadAll(res.Body)
@@ -194,7 +213,7 @@ func GetFormWithClient(c GetForm, baseURL string, requestmap map[string]interfac
 			return err
 		}
 
-		err = errs.WithLine("fail when GET %s , http response code: %d , rep: %v" ,uu.String(), res.StatusCode, string(all))
+		err = errs.WithLine("fail when GET %s , http response code: %d , rep: %v", uu.String(), res.StatusCode, string(all))
 		return
 	}
 
@@ -220,12 +239,18 @@ func PostJsonWithClient(c PostBody, baseURL string, request interface{}, rep int
 
 	b, err := json.Marshal(request)
 
-	res, err := c.Post(baseURL, "application/json", bytes.NewReader(b))
+	res, err := c.Post(baseURL, "application/json", bytes.NewReader(b)) //nolint:bodyclose
 	if err != nil {
 		err = errs.WithLine(err)
 		return
 	}
-	defer closeAndDrainResponseBody(res)
+
+	defer func(res *http.Response) {
+		err1 := closeAndDrainResponseBody(res)
+		if err1 != nil {
+			err = errs.WithLine(err, err1)
+		}
+	}(res)
 
 	if res.StatusCode == http.StatusNoContent {
 		log.Println("StatusNoContent ...")

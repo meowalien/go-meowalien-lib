@@ -18,19 +18,19 @@ type MangoDBConfiguration struct {
 	//Database string `json:"Database"`
 }
 
-func (dbconf MangoDBConfiguration) Create() (DB *mongo.Client, err error) {
+func (dbconf MangoDBConfiguration) Create() (db *mongo.Client, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	option := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%s/"  , dbconf.User , dbconf.Password, dbconf.Host, dbconf.Port ))//.SetAuth(credential)
-	DB, err = mongo.Connect(ctx, option)
+	option := options.Client().ApplyURI(fmt.Sprintf("mongodb://%s:%s@%s:%s/", dbconf.User, dbconf.Password, dbconf.Host, dbconf.Port)) //.SetAuth(credential)
+	db, err = mongo.Connect(ctx, option)
 	if err != nil {
 		return
 	}
 
 	ctx, cancel = context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
-	err = DB.Ping(ctx, readpref.Primary())
+	err = db.Ping(ctx, readpref.Primary())
 	if err != nil {
 		return
 	}

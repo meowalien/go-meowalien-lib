@@ -6,9 +6,9 @@ import (
 	"log"
 )
 
-func NewTextMessage(text string)TextMessage{
-	return &textMessage{binaryMessage{
-		Reader:      bytes.NewReader([]byte(text)),
+func NewTextMessage(text string) TextMessage {
+	return &textMessage{&binaryMessage{
+		Reader: bytes.NewReader([]byte(text)),
 	}}
 }
 

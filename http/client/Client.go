@@ -5,4 +5,3 @@ import (
 )
 
 type ClientModifier func(c *http.Client)
-

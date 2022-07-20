@@ -109,13 +109,12 @@ lp:
 			msg := m[0]
 			allExcept := m[1].([]*Client)
 
-			for msgCh := range subs {
+			for c := range subs {
+				msgCh := c
 				doTransfer := func(bk *Client) {
-					if allExcept != nil {
-						for _, exceptMsgCh := range allExcept {
-							if exceptMsgCh == bk {
-								return
-							}
+					for _, exceptMsgCh := range allExcept {
+						if exceptMsgCh == bk {
+							return
 						}
 					}
 					if !b.isActive {

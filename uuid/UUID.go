@@ -6,5 +6,5 @@ import (
 )
 
 func NewUUID(prefix string) string {
-	return fmt.Sprintf("%s%s",prefix, random.Snowflake().Base58())
+	return fmt.Sprintf("%s%s", prefix, random.Snowflake().Base58())
 }

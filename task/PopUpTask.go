@@ -13,9 +13,9 @@ type ErrLogger interface {
 }
 
 type NewPopUpTaskForm struct {
-	Provider      NewTaskFunc
-	TryAgainAfter time.Duration
-	Consumer      TaskRunner
+	Provider              NewTaskFunc
+	TryAgainAfter         time.Duration
+	Consumer              TaskRunner
 	ErrLogger             ErrLogger
 	GiveUpAfterRetryTimes int
 }

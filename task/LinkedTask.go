@@ -46,8 +46,6 @@ func (l *linkedTaskScheduler) ScheduleIfCloser(task *LinkedTask) {
 		}
 		go l.do(task)
 	}
-
-	return
 }
 
 // 執行最新任務，如果時間為未來，等待
@@ -79,5 +77,4 @@ func (l *linkedTaskScheduler) do(task *LinkedTask) {
 		return
 	}
 	l.do(newTask)
-	return
 }

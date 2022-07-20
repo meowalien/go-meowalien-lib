@@ -3,6 +3,7 @@ package websocket
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -190,18 +191,18 @@ func (c *connectionKeeper) Open(writer http.ResponseWriter, request *http.Reques
 	c.conn.SetReadLimit(c.MaxMessageSize)
 	err = c.conn.SetReadDeadline(time.Now().Add(c.PongWait))
 	if err != nil {
-		return fmt.Errorf("error when SetReadDeadline: %s", err.Error())
+		return fmt.Errorf("error when SetReadDeadline: %w", err)
 	}
 
 	c.conn.SetPingHandler(func(message string) error {
-		err := c.conn.WriteControl(websocket.PongMessage, []byte(message), time.Now().Add(writeWait))
-		if err != nil {
-			if err == websocket.ErrCloseSent {
+		err1 := c.conn.WriteControl(websocket.PongMessage, []byte(message), time.Now().Add(writeWait))
+		if err1 != nil {
+			if errors.Is(err1, websocket.ErrCloseSent) {
 				return nil
-			} else if e, ok := err.(net.Error); ok && e.Temporary() {
+			} else if _, ok := err1.(net.Error); ok { //nolint: errorlint
 				return nil
 			} else {
-				return err
+				return err1
 			}
 		}
 
@@ -236,7 +237,7 @@ func (c *connectionKeeper) readPump() {
 		messageType, reader, e := c.conn.NextReader()
 		if e != nil {
 			// 前端關閉的住況
-			if closeError, ok := e.(*websocket.CloseError); ok {
+			if closeError, ok := e.(*websocket.CloseError); ok { //nolint: errorlint
 				c.Logger.Warnf("Connection %s readPump close, type: %s", c.uuid, WebsocketCloseCodeNumberToString(closeError.Code))
 			} else {
 				c.Logger.Errorf("NextReader error: %s\n", e.Error())
@@ -488,19 +489,15 @@ type emptyDispatcher struct {
 }
 
 func (e emptyDispatcher) OnOpenConnection(connectionID string) {
-	return
 }
 
 func (e emptyDispatcher) OnCloseConnection(connectionID string) {
-	return
 }
 
 func (e emptyDispatcher) OnTextMessage(message TextMessage) {
-	return
 }
 
 func (e emptyDispatcher) OnBinaryMessage(message BinaryMessage) {
-	return
 }
 
 func (e emptyDispatcher) OnPong(message string) error {

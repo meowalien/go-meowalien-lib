@@ -32,8 +32,8 @@ func (e *orderElement) GetListElement() (element *list.Element) {
 }
 
 func (e *orderElement) Next() OrderElement {
-	f :=  e.listElement.Next()
-	if f == nil{
+	f := e.listElement.Next()
+	if f == nil {
 		return nil
 	}
 	return f.Value.(OrderElement)
