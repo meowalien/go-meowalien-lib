@@ -17,6 +17,9 @@ WithLine Usage:
 	6. WithLine(string1_with_no_"%" , obj ...) -> make a withlineError of fmt.Sprint(string1, obj...)
 */
 func WithLine(err interface{}, obj ...interface{}) error {
+	if err == nil {
+		return nil
+	}
 	callerLine := runtime.CallerFileAndLine(1)
 	var resErr error
 	switch errTp := err.(type) {
