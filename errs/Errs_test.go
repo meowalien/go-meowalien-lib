@@ -82,4 +82,5 @@ func TestWithLine_nil_parent_case(t *testing.T) {
 	err2 := errors.New("Error 2")
 	err3 := WithLine(err1, err2)
 	fmt.Println(err3)
+	assert.EqualError(t, err3, "errs/Errs_test.go:83: Error 2")
 }
