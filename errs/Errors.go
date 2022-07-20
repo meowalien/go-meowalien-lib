@@ -9,7 +9,7 @@ import (
 
 /*
 WithLine Usage:
-	1. WithLine(err) -> add caller line code to err
+	1. WithLine(err) -> add caller line code to err, if err is nil, return nil
 	2. WithLine(err1, err2) -> wrap err2 into err1 and add caller line code
 	3. WithLine(err1, string1) -> make a withlineError of string1 and wrap it to err1
 	4. WithLine(string1) -> make a withlineError of string1
