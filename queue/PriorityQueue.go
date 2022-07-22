@@ -23,3 +23,6 @@ func (p *PriorityQueue) Peek() SortableItem {
 func (p *PriorityQueue) Len() int {
 	return p.heap.Len()
 }
+func (p *PriorityQueue) Cap() int {
+	return p.heap.Cap()
+}

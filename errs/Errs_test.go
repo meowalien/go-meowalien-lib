@@ -84,3 +84,18 @@ func TestWithLine_nil_parent_case(t *testing.T) {
 	fmt.Println(err3)
 	assert.EqualError(t, err3, "errs/Errs_test.go:83: Error 2")
 }
+
+func TestWithLine_defer(t *testing.T) {
+	err3 := testFunc()
+	assert.EqualError(t, err3, "errs/Errs_test.go:97: { \n\terrs/Errs_test.go:99: Error 1\n\t=> errs/Errs_test.go:96: Error 2 \n}")
+
+}
+
+func testFunc() (err error) {
+	defer func() {
+		err1 := WithLine("Error 2")
+		err = WithLine(err, err1)
+	}()
+	return WithLine("Error 1")
+
+}

@@ -5,4 +5,5 @@ type Queue interface {
 	Pop() SortableItem
 	Peek() SortableItem
 	Len() int
+	Cap() int
 }

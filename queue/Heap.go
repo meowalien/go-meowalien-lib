@@ -3,6 +3,7 @@ package queue
 type heap []SortableItem
 
 func (h heap) Len() int { return len(h) }
+func (h heap) Cap() int { return cap(h) }
 func (h heap) Less(i, j int) bool {
 	return h[i].Less(h[j])
 }
