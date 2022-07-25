@@ -2,10 +2,7 @@ package errs
 
 import "fmt"
 
-//type WithLineError interface {
-//	error
-//	Unwrap() error
-//}
+var withLineErrorType = withLineError{}
 
 type withLineError struct {
 	lineCode string

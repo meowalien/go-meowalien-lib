@@ -36,15 +36,24 @@ func WithLine(err interface{}, obj ...interface{}) error {
 		switch {
 		case len(obj) == 0:
 			resErr = errTp
-		case len(obj) == 1 && obj[0] != nil:
-			var obj0 error
-			switch ob := obj[0].(type) {
-			case error:
-				obj0 = ob
-			case string:
-				obj0 = withLineError{lineCode: callerLine, error: errors.New(ob)}
+		case len(obj) == 1:
+			if obj[0] == nil {
+				if errors.Is(errTp, withLineErrorType) {
+					return errTp
+				} else {
+					resErr = errTp
+					break
+				}
+			} else {
+				var obj0 error
+				switch ob := obj[0].(type) {
+				case error:
+					obj0 = ob
+				case string:
+					obj0 = withLineError{lineCode: callerLine, error: errors.New(ob)}
+				}
+				resErr = wrapError(errTp, obj0)
 			}
-			resErr = wrapError(errTp, obj0)
 		default:
 			resErr = wrapError(errTp, wrapError(errTp, withLineError{lineCode: callerLine, error: errors.New(fmt.Sprint(obj...))}))
 		}

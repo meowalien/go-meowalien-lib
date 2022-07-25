@@ -97,5 +97,11 @@ func testFunc() (err error) {
 		err = WithLine(err, err1)
 	}()
 	return WithLine("Error 1")
+}
 
+func TestErrorAndNil(t *testing.T) {
+	var err2 error
+	err1 := errors.New("Error 1")
+	err3 := WithLine(err1, err2)
+	assert.EqualError(t, err3, "errs/Errs_test.go:105: Error 1")
 }
