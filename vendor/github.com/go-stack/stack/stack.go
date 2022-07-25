@@ -1,4 +1,3 @@
-//go:build go1.7
 // +build go1.7
 
 // Package stack implements utilities to capture, manipulate, and format call
