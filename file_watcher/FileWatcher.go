@@ -41,7 +41,7 @@ func (f *fileWatcher) Remove(filename string) (err error) {
 	delete(f.allWatchingFile, cleanFilePath)
 	err = f.Watcher.Remove(wFile.dir)
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 	return
@@ -62,7 +62,7 @@ func (f *fileWatcher) Add(filename string) (err error) {
 
 	err = f.Watcher.Add(dir)
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 	return
@@ -115,7 +115,7 @@ func (f *fileWatcher) onEvent(event fsnotify.Event) {
 func New(onFileUpDate func(file string), onFileRemove func(file string)) (watcher FileWatcher, err error) {
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 	watcher = &fileWatcher{
@@ -130,7 +130,7 @@ func New(onFileUpDate func(file string), onFileRemove func(file string)) (watche
 //func NewWatcher(filename string, onFileUpDate func(file string), onFileRemove func(file string)) (newWatcher file_watcher.FileWatcher, err error) {
 //	watcher, err := fsnotify.NewWatcher()
 //	if err != nil {
-//		err = errs.WithLine(err)
+//		err = errs.New(err)
 //		return
 //	}
 //	configFile := filepath.Clean(filename)
@@ -172,7 +172,7 @@ func New(onFileUpDate func(file string), onFileRemove func(file string)) (watche
 //	}()
 //	err = watcher.Add(configDir)
 //	if err != nil {
-//		err = errs.WithLine(err)
+//		err = errs.New(err)
 //		return
 //	}
 //	newWatcher = &fileWatcher{Watcher: watcher}

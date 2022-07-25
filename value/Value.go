@@ -128,7 +128,7 @@ func (d value) Negative() Value {
 
 func (d *value) Scan(v interface{}) error {
 	if v == nil {
-		return errs.WithLine("the DecimalValue should not be nil")
+		return errs.New("the DecimalValue should not be nil")
 	}
 	var vl int64
 	switch vv := v.(type) {
@@ -137,11 +137,11 @@ func (d *value) Scan(v interface{}) error {
 	case []byte:
 		ac, err := strconv.ParseInt(string(vv), 10, 64)
 		if err != nil {
-			return errs.WithLine(err)
+			return errs.New(err)
 		}
 		vl = ac
 	default:
-		return errs.WithLine("not supported type : %T", v)
+		return errs.New("not supported type : %T", v)
 	}
 	d.actual = vl
 	return nil

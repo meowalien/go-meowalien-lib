@@ -29,7 +29,7 @@ func NewQueueSocket(channel *amqp.Channel, exchangeName string) (sk QueueSocket,
 		nil,
 	)
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 	// 回應的queue
@@ -42,14 +42,14 @@ func NewQueueSocket(channel *amqp.Channel, exchangeName string) (sk QueueSocket,
 		nil,   // arguments
 	)
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 
 	responseListener := NewCorrelationIdListener(channel, responseQueue.Name)
 	err = responseListener.Start()
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 	sk = &socketKeeper{listener: responseListener, channel: channel, queueName: responseQueue.Name, exchangeName: exchangeName}
@@ -77,7 +77,7 @@ func (w *socketKeeper) PushTopic(topic string, skd SocketData, callback Listener
 	if callback != nil {
 		err = w.listener.AddListener(id, callback)
 		if err != nil {
-			err = errs.WithLine(err)
+			err = errs.New(err)
 			return
 		}
 	}
@@ -94,7 +94,7 @@ func (w *socketKeeper) PushTopic(topic string, skd SocketData, callback Listener
 			Body:          skd.Body,
 		})
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 	return

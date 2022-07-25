@@ -27,11 +27,11 @@ func CreateMysqlDBConnection(dbconf *MysqlConnectConfiguration) (*sql.DB, error)
 	dsn = fmt.Sprintf(dsn, dbconf.User, dbconf.Password, dbconf.Host, dbconf.Port, dbconf.Database)
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		return nil, errs.WithLine(err)
+		return nil, errs.New(err)
 	}
 
 	if err = db.Ping(); err != nil {
-		return nil, errs.WithLine(err)
+		return nil, errs.New(err)
 	}
 	db.SetMaxOpenConns(200)
 	db.SetMaxIdleConns(10)

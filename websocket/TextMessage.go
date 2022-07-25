@@ -24,7 +24,7 @@ type textMessage struct {
 func (t textMessage) Text() string {
 	bs, err := t.Binary()
 	if err != nil {
-		log.Println(errs.WithLine(err))
+		log.Println(errs.New(err))
 		return ""
 	}
 	return string(bs)

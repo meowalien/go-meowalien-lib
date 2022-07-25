@@ -32,13 +32,13 @@ func MapstructureOnTag(input interface{}, tag string, i interface{}) (err error)
 		TagName: tag,
 	})
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 
 	err = jsonDecoder.Decode(input)
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 	return
@@ -52,7 +52,7 @@ func DecodeJsonResponseToStruct(res *http.Response, i interface{}) (err error) {
 		var all []byte
 		all, err = ioutil.ReadAll(res.Body)
 		if err != nil {
-			return errs.WithLine(err)
+			return errs.New(err)
 		}
 
 		fmt.Println("response: ", string(all))
@@ -62,7 +62,7 @@ func DecodeJsonResponseToStruct(res *http.Response, i interface{}) (err error) {
 		decoder := json.NewDecoder(res.Body)
 		err = decoder.Decode(i)
 		if err != nil {
-			err = errs.WithLine(err)
+			err = errs.New(err)
 			return
 		}
 	}

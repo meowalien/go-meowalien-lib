@@ -69,7 +69,7 @@ func DoURLEncodedFormRequest(endpoint string, req map[string]interface{}) ([]byt
 		var body []byte
 		body, err = ioutil.ReadAll(res.Body)
 		if err != nil {
-			fmt.Println(errs.WithLine("error when read Body: %w", err).Error())
+			fmt.Println(errs.New("error when read Body: %w", err).Error())
 		}
 
 		return nil, fmt.Errorf("error StatusCode: %d, res: %v", res.StatusCode, string(body))
@@ -85,12 +85,12 @@ func DoURLEncodedFormRequest(endpoint string, req map[string]interface{}) ([]byt
 func JsonRequest(endpoint string, req interface{}) ([]byte, error) {
 	jj, err := json.Marshal(req)
 	if err != nil {
-		return nil, errs.WithLine(err)
+		return nil, errs.New(err)
 	}
 
 	r, err := http.NewRequestWithContext(context.TODO(), "POST", endpoint, bytes.NewReader(jj))
 	if err != nil {
-		return nil, errs.WithLine(err)
+		return nil, errs.New(err)
 	}
 	r.Header.Add("Content-Type", "application/json")
 	r.Header.Add("Content-Length", strconv.Itoa(len(jj)))
@@ -98,7 +98,7 @@ func JsonRequest(endpoint string, req interface{}) ([]byte, error) {
 	client := &http.Client{}
 	res, err := client.Do(r) //nolint:bodyclose
 	if err != nil {
-		return nil, errs.WithLine(err)
+		return nil, errs.New(err)
 	}
 
 	defer func(Body io.Closer) {
@@ -123,12 +123,12 @@ func closeAndDrainResponseBody(response *http.Response) (err error) {
 	defer func(body io.Closer) {
 		err1 := body.Close()
 		if err1 != nil {
-			err = errs.WithLine(err, err1)
+			err = errs.New(err, err1)
 		}
 	}(response.Body)
 	_, err = io.Copy(ioutil.Discard, response.Body)
 	if err != nil {
-		log.Println(errs.WithLine(err).Error())
+		log.Println(errs.New(err).Error())
 	}
 	return
 }
@@ -151,13 +151,13 @@ func PostFormWithClient(c PostForm, baseURL string, requestmap map[string]interf
 
 	res, err := c.PostForm(baseURL, form) //nolint:bodyclose
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 	defer func(res *http.Response) {
 		err1 := closeAndDrainResponseBody(res)
 		if err1 != nil {
-			err = errs.WithLine(err, err1)
+			err = errs.New(err, err1)
 		}
 	}(res)
 
@@ -171,13 +171,13 @@ func PostFormWithClient(c PostForm, baseURL string, requestmap map[string]interf
 			return err
 		}
 
-		err = errs.WithLine("http response code: %d , rep: %v", res.StatusCode, string(all))
+		err = errs.New("http response code: %d , rep: %v", res.StatusCode, string(all))
 		return
 	}
 
 	err = convert.DecodeJsonResponseToStruct(res, rep)
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 	return
@@ -197,13 +197,13 @@ func GetFormWithClient(c GetForm, baseURL string, requestmap map[string]interfac
 	//fmt.Println("get url: ", uu.String())
 	res, err := c.Get(uu.String()) //nolint:bodyclose
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 	defer func(res *http.Response) {
 		err1 := closeAndDrainResponseBody(res)
 		if err1 != nil {
-			err = errs.WithLine(err, err1)
+			err = errs.New(err, err1)
 		}
 	}(res)
 	if res.StatusCode != 200 {
@@ -213,13 +213,13 @@ func GetFormWithClient(c GetForm, baseURL string, requestmap map[string]interfac
 			return err
 		}
 
-		err = errs.WithLine("fail when GET %s , http response code: %d , rep: %v", uu.String(), res.StatusCode, string(all))
+		err = errs.New("fail when GET %s , http response code: %d , rep: %v", uu.String(), res.StatusCode, string(all))
 		return
 	}
 
 	err = convert.DecodeJsonResponseToStruct(res, rep)
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 	return
@@ -241,14 +241,14 @@ func PostJsonWithClient(c PostBody, baseURL string, request interface{}, rep int
 
 	res, err := c.Post(baseURL, "application/json", bytes.NewReader(b)) //nolint:bodyclose
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 
 	defer func(res *http.Response) {
 		err1 := closeAndDrainResponseBody(res)
 		if err1 != nil {
-			err = errs.WithLine(err, err1)
+			err = errs.New(err, err1)
 		}
 	}(res)
 
@@ -262,13 +262,13 @@ func PostJsonWithClient(c PostBody, baseURL string, request interface{}, rep int
 			return err
 		}
 
-		err = errs.WithLine("http response code: %d , rep: %v", res.StatusCode, string(all))
+		err = errs.New("http response code: %d , rep: %v", res.StatusCode, string(all))
 		return
 	}
 
 	err = convert.DecodeJsonResponseToStruct(res, rep)
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 	return

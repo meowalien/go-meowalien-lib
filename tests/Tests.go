@@ -23,13 +23,13 @@ type Request struct {
 func NewTestRequest(req Request) (httpCode int, err error) {
 	bodyBytes, err := json.Marshal(req.Body)
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 
 	response, err := http.NewRequest(req.Method, req.Path, bytes.NewReader(bodyBytes))
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 
@@ -37,7 +37,7 @@ func NewTestRequest(req Request) (httpCode int, err error) {
 	req.Router.ServeHTTP(recorder, response)
 	err = json.NewDecoder(recorder.Body).Decode(req.Response)
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 	return recorder.Code, nil

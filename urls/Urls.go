@@ -8,7 +8,7 @@ import (
 func AddKeyValues(rawURL string, values ...[2]string) (ansURL string, err error) {
 	uu, err := url.Parse(rawURL)
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return "", err
 	}
 
@@ -25,7 +25,7 @@ func AddKeyValues(rawURL string, values ...[2]string) (ansURL string, err error)
 //func AddValues(rawURL *url.URL, values url.Values )(ansURL string , err error)  {
 //	//uu , err := url.Handle(rawURL)
 //	//if err != nil{
-//	//	err = errs.WithLine(err)
+//	//	err = errs.New(err)
 //	//	return "" , err
 //	//}
 //	//
@@ -44,7 +44,7 @@ func Join(uu ...string) (u *url.URL, err error) {
 	for _, s := range uu {
 		u, err = u.Parse(s)
 		if err != nil {
-			err = errs.WithLine(err)
+			err = errs.New(err)
 			return
 		}
 	}

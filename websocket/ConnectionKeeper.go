@@ -184,7 +184,7 @@ func (c *connectionKeeper) Open(writer http.ResponseWriter, request *http.Reques
 	}
 	c.conn, err = websocketUpgrader.Upgrade(writer, request, responseHeader)
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 
@@ -292,7 +292,7 @@ loop:
 			}
 			err := c.conn.SetWriteDeadline(time.Now().Add(c.WriteWait))
 			if err != nil {
-				c.Logger.Errorf(errs.WithLine(err).Error())
+				c.Logger.Errorf(errs.New(err).Error())
 				continue
 			}
 			var writer io.WriteCloser
@@ -308,18 +308,18 @@ loop:
 			}
 
 			if err != nil {
-				c.Logger.Errorf(errs.WithLine(err).Error())
+				c.Logger.Errorf(errs.New(err).Error())
 				continue
 			}
 
 			_, err = io.Copy(writer, message)
 			if err != nil {
-				c.Logger.Errorf(errs.WithLine(err).Error())
+				c.Logger.Errorf(errs.New(err).Error())
 				continue
 			}
 
 			if err = writer.Close(); err != nil {
-				c.Logger.Errorf(errs.WithLine(err).Error())
+				c.Logger.Errorf(errs.New(err).Error())
 				continue
 			}
 		case <-pingTimer.C:
@@ -429,7 +429,7 @@ func (c *connectionKeeper) CloseConnection() error {
 		c.readPumpClosed = true
 		err := c.conn.Close()
 		if err != nil {
-			return errs.WithLine(err)
+			return errs.New(err)
 		}
 	}
 
@@ -460,7 +460,7 @@ func (c *connectionKeeper) multipleConnectionProcess() error {
 
 	err := conn.CloseConnection()
 	if err != nil {
-		return errs.WithLine(err)
+		return errs.New(err)
 	}
 	cacheConnectionWithTargetUUID(c.ConnectionOwner, conn)
 

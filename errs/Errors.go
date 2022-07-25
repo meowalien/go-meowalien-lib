@@ -8,19 +8,19 @@ import (
 )
 
 /*
-WithLine Usage:
-	1. WithLine(err) -> add caller line code to err, if err is nil, return nil
-	2. WithLine(err1, err2) -> wrap err2 into err1 and add caller line code
-	3. WithLine(err1, string1) -> make a withlineError of string1 and wrap it to err1
-	4. WithLine(string1) -> make a withlineError of string1
-	5. WithLine(string1 , obj ...) -> make a withlineError of fmt.Errorf(string1, obj...)
-	6. WithLine(string1_with_no_"%" , obj ...) -> make a withlineError of fmt.Sprint(string1, obj...)
+New Usage:
+	1. New(err) -> add caller line code to err, if err is nil, return nil
+	2. New(err1, err2) -> wrap err2 into err1 and add caller line code
+	3. New(err1, string1) -> make a withlineError of string1 and wrap it to err1
+	4. New(string1) -> make a withlineError of string1
+	5. New(string1 , obj ...) -> make a withlineError of fmt.Errorf(string1, obj...)
+	6. New(string1_with_no_"%" , obj ...) -> make a withlineError of fmt.Sprint(string1, obj...)
 */
-func WithLine(err interface{}, obj ...interface{}) error {
+func New(err interface{}, obj ...interface{}) error {
 	if err == nil {
 		if len(obj) != 1 {
 			if len(obj) > 1 {
-				panic("WithLine: obj must be one or zero")
+				panic("New: obj must be one or zero")
 			}
 			return nil
 		}

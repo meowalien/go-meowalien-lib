@@ -31,7 +31,7 @@ type correlationIdListener struct {
 func (r *correlationIdListener) Start() (err error) {
 	div, err := r.ch.Consume(r.queueName, "", false, false, false, false, nil)
 	if err != nil {
-		err = errs.WithLine(err)
+		err = errs.New(err)
 		return
 	}
 	go func() {
@@ -66,7 +66,7 @@ func (r *correlationIdListener) AddListener(key string, listener ListenerFunc) (
 	fmt.Println("AddListener: ", key)
 	_, loaded := r.listenerMap.LoadOrStore(key, listener)
 	if loaded {
-		err = errs.WithLine("the Listener on key %s is already exist", key)
+		err = errs.New("the Listener on key %s is already exist", key)
 		return
 	}
 	//r.listenerMap.Range(func(key, value interface{}) bool {
