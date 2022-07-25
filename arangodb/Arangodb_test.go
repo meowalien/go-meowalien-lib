@@ -2,8 +2,8 @@ package arangodb
 
 import (
 	"context"
-	"fmt"
 	"github.com/arangodb/go-driver"
+	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 )
@@ -25,12 +25,12 @@ func (r *ReadDocumentFuncMock) HasMore() bool {
 func TestReadDocument(t *testing.T) {
 	cursor := &ReadDocumentFuncMock{ReadTimes: 1}
 	ss, err := ReadDocument[string](context.TODO(), cursor)
-	fmt.Println(err)
-	fmt.Println(ss)
+	assert.NoError(t, err)
+	assert.Equal(t, ss, []string{"test"})
 }
 func TestReadDocuments(t *testing.T) {
 	cursor := &ReadDocumentFuncMock{ReadTimes: 3}
 	ss, err := ReadDocument[string](context.TODO(), cursor)
-	fmt.Println(err)
-	fmt.Println(ss)
+	assert.NoError(t, err)
+	assert.Equal(t, ss, []string{"test", "test", "test"})
 }
