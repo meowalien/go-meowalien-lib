@@ -9,7 +9,7 @@ import (
 )
 
 type Query interface {
-	Query(ctx context.Context, query string, bindVars map[string]interface{}) (ReadDocumentFunc, error)
+	Query(ctx context.Context, query string, bindVars map[string]interface{}) (driver.Cursor, error)
 }
 
 type ReadDocumentFunc interface {
