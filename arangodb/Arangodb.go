@@ -21,11 +21,11 @@ type ReadDocumentFunc interface {
 	io.Closer
 }
 
-type decoder[T any, R any] interface {
+type decoder[R any] interface {
 	func(ctx context.Context, f ReadDocumentFunc) (result R, err error)
 }
 
-func withCursor[T any, R any, D decoder[T, R]](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}, callback D) (res R, err error) {
+func withCursor[T any, R any, D decoder[R]](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}, callback D) (res R, err error) {
 	cursor, err := q.Query(ctx, aqlQuery, keys)
 	if err != nil {
 		err = errs.New(err)
