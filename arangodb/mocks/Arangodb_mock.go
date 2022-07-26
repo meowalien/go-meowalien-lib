@@ -2,7 +2,7 @@
 // Source: ./arangodb/Arangodb.go
 
 // Package arangodb is a generated GoMock package.
-package arangodb
+package mocks
 
 import (
 	context "context"

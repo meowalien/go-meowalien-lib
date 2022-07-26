@@ -4,13 +4,14 @@ import (
 	"context"
 	"github.com/arangodb/go-driver"
 	"github.com/golang/mock/gomock"
+	"github.com/meowalien/go-meowalien-lib/arangodb/mocks"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 )
 
 type ReadDocumentFuncMock struct {
-	*MockCursor
+	*mocks.MockCursor
 	ReadTimes int
 }
 
@@ -71,9 +72,9 @@ func TestQueryAndRead(t *testing.T) {
 		func() {
 			testController := gomock.NewController(t)
 			defer testController.Finish()
-			mockCursor := NewMockCursor(testController)
+			mockCursor := mocks.NewMockCursor(testController)
 
-			mockQuery := NewMockQuery(testController)
+			mockQuery := mocks.NewMockQuery(testController)
 			cursor := &ReadDocumentFuncMock{ReadTimes: 1, MockCursor: mockCursor}
 			mockQuery.EXPECT().Query(context.TODO(), "", map[string]interface{}{}).Return(cursor, nil)
 
@@ -88,9 +89,9 @@ func TestQueryAndReadPtr(t *testing.T) {
 		func() {
 			testController := gomock.NewController(t)
 			defer testController.Finish()
-			mockCursor := NewMockCursor(testController)
+			mockCursor := mocks.NewMockCursor(testController)
 
-			mockQuery := NewMockQuery(testController)
+			mockQuery := mocks.NewMockQuery(testController)
 			cursor := &ReadDocumentFuncMock{ReadTimes: 1, MockCursor: mockCursor}
 			mockQuery.EXPECT().Query(context.TODO(), "", map[string]interface{}{}).Return(cursor, nil)
 
@@ -106,9 +107,9 @@ func TestQueryAndReadFirstPtr(t *testing.T) {
 		func() {
 			testController := gomock.NewController(t)
 			defer testController.Finish()
-			mockCursor := NewMockCursor(testController)
+			mockCursor := mocks.NewMockCursor(testController)
 
-			mockQuery := NewMockQuery(testController)
+			mockQuery := mocks.NewMockQuery(testController)
 			cursor := &ReadDocumentFuncMock{ReadTimes: 1, MockCursor: mockCursor}
 			mockQuery.EXPECT().Query(context.TODO(), "", map[string]interface{}{}).Return(cursor, nil)
 
