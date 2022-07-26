@@ -37,8 +37,7 @@ func withCursor[T any, R any, D decoder[T, R]](ctx context.Context, q Query, aql
 			err = errs.New(err, err1)
 		}
 	}(cursor)
-	a, b := callback(ctx, cursor)
-	return a, b
+	return callback(ctx, cursor)
 }
 
 func ReadDocumentsPtr[T any](ctx context.Context, f ReadDocumentFunc) (result []*T, err error) {
