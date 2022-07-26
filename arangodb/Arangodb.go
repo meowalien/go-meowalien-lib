@@ -8,6 +8,10 @@ import (
 	"io"
 )
 
+type Cursor interface {
+	driver.Cursor
+}
+
 type Query interface {
 	Query(ctx context.Context, query string, bindVars map[string]interface{}) (driver.Cursor, error)
 }
@@ -43,4 +47,8 @@ func QueryAndRead[T any](ctx context.Context, q Query, aqlQuery string, keys map
 	}(cursor)
 	return ReadDocument[T](ctx, cursor)
 
+}
+
+type Proxy interface {
+	Passthrough(ctx context.Context, s string) (string, error)
 }

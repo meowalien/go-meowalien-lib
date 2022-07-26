@@ -3,17 +3,15 @@ package arangodb
 import (
 	"context"
 	"github.com/arangodb/go-driver"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 )
 
 type ReadDocumentFuncMock struct {
+	*MockCursor
 	ReadTimes int
-}
-
-func (r *ReadDocumentFuncMock) Query(ctx context.Context, query string, bindVars map[string]interface{}) (ReadDocumentFunc, error) {
-	return r, nil
 }
 
 func (r *ReadDocumentFuncMock) Close() error {
@@ -52,9 +50,16 @@ func TestReadDocuments(t *testing.T) {
 func TestQueryAndRead(t *testing.T) {
 	assert.NotPanics(t,
 		func() {
-			cursor := &ReadDocumentFuncMock{ReadTimes: 3}
-			ss, err := QueryAndRead[string](context.TODO(), cursor, "", nil)
+			testController := gomock.NewController(t)
+			defer testController.Finish()
+			mockCursor := NewMockCursor(testController)
+
+			mockQuery := NewMockQuery(testController)
+			cursor := &ReadDocumentFuncMock{ReadTimes: 1, MockCursor: mockCursor}
+			mockQuery.EXPECT().Query(context.TODO(), "", map[string]interface{}{}).Return(cursor, nil)
+
+			result, err := QueryAndRead[string](context.TODO(), mockQuery, "", map[string]interface{}{})
 			assert.NoError(t, err)
-			assert.Equal(t, ss, []string{"test", "test", "test"})
+			assert.Equal(t, result, []string{"test"})
 		})
 }

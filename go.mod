@@ -8,6 +8,7 @@ require (
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/go-redis/redis/v8 v8.11.4
 	github.com/go-sql-driver/mysql v1.6.0
+	github.com/golang/mock v1.4.3
 	github.com/gorilla/websocket v1.4.2
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/mitchellh/mapstructure v1.4.3
@@ -15,7 +16,7 @@ require (
 	github.com/shopspring/decimal v1.3.1
 	github.com/spf13/viper v1.10.1
 	github.com/streadway/amqp v1.0.0
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.0
 	go.mongodb.org/mongo-driver v1.8.4
 	go.uber.org/zap v1.19.1
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
@@ -52,5 +53,6 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.66.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
+
 )
