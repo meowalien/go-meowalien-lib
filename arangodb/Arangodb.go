@@ -25,7 +25,7 @@ type decoder[R any] interface {
 	func(ctx context.Context, f ReadDocumentFunc) (result R, err error)
 }
 
-func withCursor[T any, R any, D decoder[R]](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}, callback D) (res R, err error) {
+func withCursor[R any, D decoder[R]](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}, callback D) (res R, err error) {
 	cursor, err := q.Query(ctx, aqlQuery, keys)
 	if err != nil {
 		err = errs.New(err)
@@ -83,17 +83,17 @@ func ReadDocumentsPtr[T any](ctx context.Context, f ReadDocumentFunc) (result []
 }
 
 func QueryAndReadDocumentPtr[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result *T, err error) {
-	return withCursor[T](ctx, q, aqlQuery, keys, ReadDocumentPtr[T])
+	return withCursor(ctx, q, aqlQuery, keys, ReadDocumentPtr[T])
 }
 
 func QueryAndReadDocument[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result T, err error) {
-	return withCursor[T](ctx, q, aqlQuery, keys, ReadDocument[T])
+	return withCursor(ctx, q, aqlQuery, keys, ReadDocument[T])
 }
 
 func QueryAndReadDocuments[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result []T, err error) {
-	return withCursor[T, []T](ctx, q, aqlQuery, keys, ReadDocuments[T])
+	return withCursor(ctx, q, aqlQuery, keys, ReadDocuments[T])
 }
 
 func QueryAndReadDocumentsPtr[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result []*T, err error) {
-	return withCursor[T, []*T](ctx, q, aqlQuery, keys, ReadDocumentsPtr[T])
+	return withCursor(ctx, q, aqlQuery, keys, ReadDocumentsPtr[T])
 }
