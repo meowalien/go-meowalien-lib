@@ -46,7 +46,32 @@ func QueryAndRead[T any](ctx context.Context, q Query, aqlQuery string, keys map
 		}
 	}(cursor)
 	return ReadDocument[T](ctx, cursor)
+}
 
+func QueryAndReadPtr[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result []*T, err error) {
+	cursor, err := q.Query(ctx, aqlQuery, keys)
+	if err != nil {
+		return nil, fmt.Errorf("Repo GetGameIDsInThemes failed: %w", err)
+	}
+	defer func(cursor io.Closer) {
+		err1 := cursor.Close()
+		if err1 != nil {
+			err = errs.New(err, err1)
+		}
+	}(cursor)
+	return ReadDocumentPtr[T](ctx, cursor)
+}
+
+func ReadDocumentPtr[T any](ctx context.Context, f ReadDocumentFunc) (result []*T, err error) {
+	for f.HasMore() {
+		var raw T
+		_, err = f.ReadDocument(ctx, &raw)
+		if err != nil {
+			return
+		}
+		result = append(result, &raw)
+	}
+	return
 }
 
 type Proxy interface {

@@ -2,6 +2,7 @@ package arangodb
 
 import (
 	"context"
+	"fmt"
 	"github.com/arangodb/go-driver"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -19,6 +20,7 @@ func (r *ReadDocumentFuncMock) Close() error {
 }
 
 func (r *ReadDocumentFuncMock) ReadDocument(ctx context.Context, result interface{}) (driver.DocumentMeta, error) {
+	fmt.Println("reflect.ValueOf(result).Elem(): ", reflect.ValueOf(result).Elem().Kind())
 	reflect.ValueOf(result).Elem().SetString("test")
 	return driver.DocumentMeta{}, nil
 }
@@ -61,5 +63,23 @@ func TestQueryAndRead(t *testing.T) {
 			result, err := QueryAndRead[string](context.TODO(), mockQuery, "", map[string]interface{}{})
 			assert.NoError(t, err)
 			assert.Equal(t, result, []string{"test"})
+		})
+}
+
+func TestQueryAndReadPointer(t *testing.T) {
+	assert.NotPanics(t,
+		func() {
+			testController := gomock.NewController(t)
+			defer testController.Finish()
+			mockCursor := NewMockCursor(testController)
+
+			mockQuery := NewMockQuery(testController)
+			cursor := &ReadDocumentFuncMock{ReadTimes: 1, MockCursor: mockCursor}
+			mockQuery.EXPECT().Query(context.TODO(), "", map[string]interface{}{}).Return(cursor, nil)
+
+			result, err := QueryAndReadPtr[string](context.TODO(), mockQuery, "", map[string]interface{}{})
+			assert.NoError(t, err)
+			s := "test"
+			assert.Equal(t, []*string{&s}, result)
 		})
 }
