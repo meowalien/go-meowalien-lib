@@ -86,6 +86,10 @@ func QueryAndReadDocumentPtr[T any](ctx context.Context, q Query, aqlQuery strin
 	return withCursor[T](ctx, q, aqlQuery, keys, ReadDocumentPtr[T])
 }
 
+func QueryAndReadDocument[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result T, err error) {
+	return withCursor[T](ctx, q, aqlQuery, keys, ReadDocument[T])
+}
+
 func QueryAndReadDocuments[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result []T, err error) {
 	return withCursor[T, []T](ctx, q, aqlQuery, keys, ReadDocuments[T])
 }
