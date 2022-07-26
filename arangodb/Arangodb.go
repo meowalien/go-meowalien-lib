@@ -22,6 +22,8 @@ type ReadDocumentFunc interface {
 	io.Closer
 }
 
+// ReadDocument read all documents from cursor
+// T should not be a pointer
 func ReadDocument[T any](ctx context.Context, f ReadDocumentFunc) (result []T, err error) {
 	for f.HasMore() {
 		var raw T
@@ -34,6 +36,8 @@ func ReadDocument[T any](ctx context.Context, f ReadDocumentFunc) (result []T, e
 	return
 }
 
+// QueryAndRead execute query and read all documents from cursor
+// T should not be a pointer
 func QueryAndRead[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result []T, err error) {
 	cursor, err := q.Query(ctx, aqlQuery, keys)
 	if err != nil {
@@ -48,6 +52,8 @@ func QueryAndRead[T any](ctx context.Context, q Query, aqlQuery string, keys map
 	return ReadDocument[T](ctx, cursor)
 }
 
+// QueryAndReadPtr execute query and read all documents from cursor
+// T should not be a pointer
 func QueryAndReadPtr[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result []*T, err error) {
 	cursor, err := q.Query(ctx, aqlQuery, keys)
 	if err != nil {
@@ -62,6 +68,8 @@ func QueryAndReadPtr[T any](ctx context.Context, q Query, aqlQuery string, keys 
 	return ReadDocumentPtr[T](ctx, cursor)
 }
 
+// ReadDocumentPtr read all documents from cursor
+// T should not be a pointer
 func ReadDocumentPtr[T any](ctx context.Context, f ReadDocumentFunc) (result []*T, err error) {
 	for f.HasMore() {
 		var raw T
