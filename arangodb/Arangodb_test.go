@@ -2,7 +2,6 @@ package arangodb
 
 import (
 	"context"
-	"fmt"
 	"github.com/arangodb/go-driver"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -20,7 +19,6 @@ func (r *ReadDocumentFuncMock) Close() error {
 }
 
 func (r *ReadDocumentFuncMock) ReadDocument(ctx context.Context, result interface{}) (driver.DocumentMeta, error) {
-	fmt.Println("reflect.ValueOf(result).Elem(): ", reflect.ValueOf(result).Elem().Kind())
 	reflect.ValueOf(result).Elem().SetString("test")
 	return driver.DocumentMeta{}, nil
 }
@@ -29,26 +27,45 @@ func (r *ReadDocumentFuncMock) HasMore() bool {
 	r.ReadTimes--
 	return r.ReadTimes >= 0
 }
-
-func TestReadDocument(t *testing.T) {
+func TestReadDocuments(t *testing.T) {
+	assert.NotPanics(t,
+		func() {
+			cursor := &ReadDocumentFuncMock{ReadTimes: 3}
+			ss, err := ReadDocuments[string](context.TODO(), cursor)
+			assert.NoError(t, err)
+			assert.Equal(t, ss, []string{"test", "test", "test"})
+		})
+}
+func TestReadDocumentsPtr(t *testing.T) {
 	assert.NotPanics(t,
 		func() {
 			cursor := &ReadDocumentFuncMock{ReadTimes: 1}
-			ss, err := ReadDocument[string](context.TODO(), cursor)
+			ss, err := ReadDocumentsPtr[string](context.TODO(), cursor)
 			assert.NoError(t, err)
-			assert.Equal(t, ss, []string{"test"})
+			s := "test"
+			assert.Equal(t, ss, []*string{&s})
 		})
 }
-func TestReadDocuments(t *testing.T) {
+
+func TestReadDocument(t *testing.T) {
 	assert.NotPanics(t,
 		func() {
 			cursor := &ReadDocumentFuncMock{ReadTimes: 3}
 			ss, err := ReadDocument[string](context.TODO(), cursor)
 			assert.NoError(t, err)
-			assert.Equal(t, ss, []string{"test", "test", "test"})
+			assert.Equal(t, ss, "test")
 		})
 }
-
+func TestReadDocumentPtr(t *testing.T) {
+	assert.NotPanics(t,
+		func() {
+			cursor := &ReadDocumentFuncMock{ReadTimes: 3}
+			ss, err := ReadDocumentPtr[string](context.TODO(), cursor)
+			assert.NoError(t, err)
+			s := "test"
+			assert.Equal(t, ss, &s)
+		})
+}
 func TestQueryAndRead(t *testing.T) {
 	assert.NotPanics(t,
 		func() {
@@ -66,7 +83,7 @@ func TestQueryAndRead(t *testing.T) {
 		})
 }
 
-func TestQueryAndReadPointer(t *testing.T) {
+func TestQueryAndReadPtr(t *testing.T) {
 	assert.NotPanics(t,
 		func() {
 			testController := gomock.NewController(t)
@@ -81,5 +98,23 @@ func TestQueryAndReadPointer(t *testing.T) {
 			assert.NoError(t, err)
 			s := "test"
 			assert.Equal(t, []*string{&s}, result)
+		})
+}
+
+func TestQueryAndReadFirstPtr(t *testing.T) {
+	assert.NotPanics(t,
+		func() {
+			testController := gomock.NewController(t)
+			defer testController.Finish()
+			mockCursor := NewMockCursor(testController)
+
+			mockQuery := NewMockQuery(testController)
+			cursor := &ReadDocumentFuncMock{ReadTimes: 1, MockCursor: mockCursor}
+			mockQuery.EXPECT().Query(context.TODO(), "", map[string]interface{}{}).Return(cursor, nil)
+
+			result, err := QueryAndReadFirstPtr[string](context.TODO(), mockQuery, "", map[string]interface{}{})
+			assert.NoError(t, err)
+			s := "test"
+			assert.Equal(t, &s, result)
 		})
 }

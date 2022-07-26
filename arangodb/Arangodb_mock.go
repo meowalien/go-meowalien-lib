@@ -91,19 +91,19 @@ func (mr *MockCursorMockRecorder) HasMore() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasMore", reflect.TypeOf((*MockCursor)(nil).HasMore))
 }
 
-// ReadDocument mocks base method.
+// ReadDocuments mocks base method.
 func (m *MockCursor) ReadDocument(ctx context.Context, result interface{}) (driver.DocumentMeta, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReadDocument", ctx, result)
+	ret := m.ctrl.Call(m, "ReadDocuments", ctx, result)
 	ret0, _ := ret[0].(driver.DocumentMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ReadDocument indicates an expected call of ReadDocument.
+// ReadDocuments indicates an expected call of ReadDocuments.
 func (mr *MockCursorMockRecorder) ReadDocument(ctx, result interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadDocument", reflect.TypeOf((*MockCursor)(nil).ReadDocument), ctx, result)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadDocuments", reflect.TypeOf((*MockCursor)(nil).ReadDocument), ctx, result)
 }
 
 // Statistics mocks base method.
@@ -209,19 +209,19 @@ func (mr *MockReadDocumentFuncMockRecorder) HasMore() *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "HasMore", reflect.TypeOf((*MockReadDocumentFunc)(nil).HasMore))
 }
 
-// ReadDocument mocks base method.
+// ReadDocuments mocks base method.
 func (m *MockReadDocumentFunc) ReadDocument(ctx context.Context, result interface{}) (driver.DocumentMeta, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReadDocument", ctx, result)
+	ret := m.ctrl.Call(m, "ReadDocuments", ctx, result)
 	ret0, _ := ret[0].(driver.DocumentMeta)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ReadDocument indicates an expected call of ReadDocument.
+// ReadDocuments indicates an expected call of ReadDocuments.
 func (mr *MockReadDocumentFuncMockRecorder) ReadDocument(ctx, result interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadDocument", reflect.TypeOf((*MockReadDocumentFunc)(nil).ReadDocument), ctx, result)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadDocuments", reflect.TypeOf((*MockReadDocumentFunc)(nil).ReadDocument), ctx, result)
 }
 
 // MockProxy is a mock of Proxy interface.
