@@ -77,7 +77,7 @@ func TestQueryAndRead(t *testing.T) {
 			cursor := &ReadDocumentFuncMock{ReadTimes: 1, MockCursor: mockCursor}
 			mockQuery.EXPECT().Query(context.TODO(), "", map[string]interface{}{}).Return(cursor, nil)
 
-			result, err := QueryAndRead[string](context.TODO(), mockQuery, "", map[string]interface{}{})
+			result, err := QueryAndReadDocuments[string](context.TODO(), mockQuery, "", map[string]interface{}{})
 			assert.NoError(t, err)
 			assert.Equal(t, result, []string{"test"})
 		})
@@ -94,7 +94,7 @@ func TestQueryAndReadPtr(t *testing.T) {
 			cursor := &ReadDocumentFuncMock{ReadTimes: 1, MockCursor: mockCursor}
 			mockQuery.EXPECT().Query(context.TODO(), "", map[string]interface{}{}).Return(cursor, nil)
 
-			result, err := QueryAndReadPtr[string](context.TODO(), mockQuery, "", map[string]interface{}{})
+			result, err := QueryAndReadDocumentsPtr[string](context.TODO(), mockQuery, "", map[string]interface{}{})
 			assert.NoError(t, err)
 			s := "test"
 			assert.Equal(t, []*string{&s}, result)
@@ -112,7 +112,7 @@ func TestQueryAndReadFirstPtr(t *testing.T) {
 			cursor := &ReadDocumentFuncMock{ReadTimes: 1, MockCursor: mockCursor}
 			mockQuery.EXPECT().Query(context.TODO(), "", map[string]interface{}{}).Return(cursor, nil)
 
-			result, err := QueryAndReadFirstPtr[string](context.TODO(), mockQuery, "", map[string]interface{}{})
+			result, err := QueryAndReadDocumentPtr[string](context.TODO(), mockQuery, "", map[string]interface{}{})
 			assert.NoError(t, err)
 			s := "test"
 			assert.Equal(t, &s, result)

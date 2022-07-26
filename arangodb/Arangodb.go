@@ -40,15 +40,20 @@ func withCursor[T any, R any, D decoder[T, R]](ctx context.Context, q Query, aql
 	return callback(ctx, cursor)
 }
 
-func ReadDocumentsPtr[T any](ctx context.Context, f ReadDocumentFunc) (result []*T, err error) {
-	for f.HasMore() {
-		var raw T
-		_, err = f.ReadDocument(ctx, &raw)
-		if err != nil {
-			return
-		}
-		result = append(result, &raw)
+func ReadDocument[T any](ctx context.Context, f ReadDocumentFunc) (result T, err error) {
+	r, err := ReadDocumentPtr[T](ctx, f)
+	result = *r
+	return
+}
+
+func ReadDocumentPtr[T any](ctx context.Context, f ReadDocumentFunc) (result *T, err error) {
+	var r T
+	_, err = f.ReadDocument(ctx, &r)
+	if err != nil {
+		err = errs.New(err)
+		return
 	}
+	result = &r
 	return
 }
 
@@ -65,31 +70,26 @@ func ReadDocuments[T any, R []T](ctx context.Context, f ReadDocumentFunc) (resul
 	return
 }
 
-func ReadDocumentPtr[T any](ctx context.Context, f ReadDocumentFunc) (result *T, err error) {
-	var r T
-	_, err = f.ReadDocument(ctx, &r)
-	if err != nil {
-		err = errs.New(err)
-		return
+func ReadDocumentsPtr[T any](ctx context.Context, f ReadDocumentFunc) (result []*T, err error) {
+	for f.HasMore() {
+		var raw T
+		_, err = f.ReadDocument(ctx, &raw)
+		if err != nil {
+			return
+		}
+		result = append(result, &raw)
 	}
-	result = &r
 	return
 }
 
-func ReadDocument[T any](ctx context.Context, f ReadDocumentFunc) (result T, err error) {
-	r, err := ReadDocumentPtr[T](ctx, f)
-	result = *r
-	return
-}
-
-func QueryAndReadFirstPtr[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result *T, err error) {
+func QueryAndReadDocumentPtr[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result *T, err error) {
 	return withCursor[T](ctx, q, aqlQuery, keys, ReadDocumentPtr[T])
 }
 
-func QueryAndRead[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result []T, err error) {
+func QueryAndReadDocuments[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result []T, err error) {
 	return withCursor[T, []T](ctx, q, aqlQuery, keys, ReadDocuments[T])
 }
 
-func QueryAndReadPtr[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result []*T, err error) {
+func QueryAndReadDocumentsPtr[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result []*T, err error) {
 	return withCursor[T, []*T](ctx, q, aqlQuery, keys, ReadDocumentsPtr[T])
 }
