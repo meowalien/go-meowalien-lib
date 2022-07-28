@@ -2,98 +2,139 @@ package arangodb
 
 import (
 	"context"
+	"crypto/tls"
 	"github.com/arangodb/go-driver"
+	"github.com/arangodb/go-driver/http"
 	"github.com/meowalien/go-meowalien-lib/errs"
-	"io"
+	"golang.org/x/net/http2"
+	"net"
+	defaulthttp "net/http"
+	"net/url"
+	"time"
 )
 
-type Cursor interface {
-	driver.Cursor
+type _HTTP_PROTOCOL int
+
+const (
+	HTTP_1_1_PROTOCOL _HTTP_PROTOCOL = iota
+	HTTP_2_0_PROTOCOL _HTTP_PROTOCOL = iota
+)
+
+type ArangoDBConnectionConfig struct {
+	Address         []string
+	UserName        string
+	Password        string
+	HttpProtocol    _HTTP_PROTOCOL
+	SSLCert         bool
+	ConnectionLimit int
+	Database        string
 }
 
-type Query interface {
-	Query(ctx context.Context, query string, bindVars map[string]interface{}) (driver.Cursor, error)
-}
-
-type ReadDocumentFunc interface {
-	ReadDocument(ctx context.Context, result interface{}) (driver.DocumentMeta, error)
-	HasMore() bool
-	io.Closer
-}
-
-type decoder[R any] interface {
-	func(ctx context.Context, f ReadDocumentFunc) (result R, err error)
-}
-
-func withCursor[R any, D decoder[R]](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}, callback D) (res R, err error) {
-	cursor, err := q.Query(ctx, aqlQuery, keys)
+func NewDatabaseConnection(ctx context.Context, config ArangoDBConnectionConfig) (dbConn driver.Database, err error) {
+	err = checkFormat(config)
+	if err != nil {
+		return
+	}
+	conn, err := createConnectionByHTTPProtocol(config)
 	if err != nil {
 		err = errs.New(err)
 		return
 	}
-	defer func(cursor io.Closer) {
-		err1 := cursor.Close()
-		if err1 != nil {
-			err = errs.New(err, err1)
+
+	c, err := driver.NewClient(driver.ClientConfig{
+		Connection:     conn,
+		Authentication: driver.BasicAuthentication(config.UserName, config.Password),
+	})
+	if err != nil {
+		err = errs.New(err)
+		return
+	}
+	if _, err1 := c.Version(ctx); err1 != nil {
+		err = errs.New(err1)
+		return
+	}
+	dbConn, err = c.Database(ctx, config.Database)
+	if err != nil {
+		err = errs.New(err)
+		return
+	}
+	return
+}
+
+func createConnectionByHTTPProtocol(config ArangoDBConnectionConfig) (conn driver.Connection, err error) {
+	dbIPs, err := formatAsUrls(config.Address)
+	if err != nil {
+		err = errs.New(err)
+		return
+	}
+	switch config.HttpProtocol {
+	case HTTP_1_1_PROTOCOL:
+		transport := &defaulthttp.Transport{
+			DialContext: (&net.Dialer{
+				KeepAlive: 60 * time.Second,
+			}).DialContext,
+			MaxIdleConns:          0,
+			IdleConnTimeout:       30 * time.Second,
+			ExpectContinueTimeout: 1 * time.Second,
 		}
-	}(cursor)
-	return callback(ctx, cursor)
-}
-
-func ReadDocument[T any](ctx context.Context, f ReadDocumentFunc) (result T, err error) {
-	r, err := ReadDocumentPtr[T](ctx, f)
-	result = *r
-	return
-}
-
-func ReadDocumentPtr[T any](ctx context.Context, f ReadDocumentFunc) (result *T, err error) {
-	var r T
-	_, err = f.ReadDocument(ctx, &r)
-	if err != nil {
-		err = errs.New(err)
-		return
-	}
-	result = &r
-	return
-}
-
-func ReadDocuments[T any, R []T](ctx context.Context, f ReadDocumentFunc) (result []T, err error) {
-	for f.HasMore() {
-		var raw *T
-		raw, err = ReadDocumentPtr[T](ctx, f)
+		conn, err = http.NewConnection(http.ConnectionConfig{
+			Endpoints: dbIPs,
+			ConnLimit: config.ConnectionLimit,
+			Transport: transport,
+		})
 		if err != nil {
 			err = errs.New(err)
 			return
 		}
-		result = append(result, *raw)
-	}
-	return
-}
-
-func ReadDocumentsPtr[T any](ctx context.Context, f ReadDocumentFunc) (result []*T, err error) {
-	for f.HasMore() {
-		var raw T
-		_, err = f.ReadDocument(ctx, &raw)
+	case HTTP_2_0_PROTOCOL:
+		transport := &http2.Transport{
+			AllowHTTP: true,
+			DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
+				return net.Dial(network, addr)
+			},
+		}
+		conn, err = http.NewConnection(http.ConnectionConfig{
+			Endpoints: dbIPs,
+			ConnLimit: config.ConnectionLimit,
+			Transport: transport,
+		})
 		if err != nil {
+			err = errs.New(err)
 			return
 		}
-		result = append(result, &raw)
+	default:
+		err = errs.New("Unsupported HTTP protocol")
+		return
 	}
+
 	return
 }
 
-func QueryAndReadDocumentPtr[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result *T, err error) {
-	return withCursor(ctx, q, aqlQuery, keys, ReadDocumentPtr[T])
+func formatAsUrls(host []string) ([]string, error) {
+	for i, h := range host {
+		var u *url.URL
+		u, err := url.Parse("http://" + h)
+		if err != nil {
+			err = errs.New(err)
+			return nil, err
+		}
+		host[i] = u.String()
+	}
+	return host, nil
 }
 
-func QueryAndReadDocument[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result T, err error) {
-	return withCursor(ctx, q, aqlQuery, keys, ReadDocument[T])
-}
-
-func QueryAndReadDocuments[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result []T, err error) {
-	return withCursor(ctx, q, aqlQuery, keys, ReadDocuments[T])
-}
-
-func QueryAndReadDocumentsPtr[T any](ctx context.Context, q Query, aqlQuery string, keys map[string]interface{}) (result []*T, err error) {
-	return withCursor(ctx, q, aqlQuery, keys, ReadDocumentsPtr[T])
+func checkFormat(config ArangoDBConnectionConfig) error {
+	if config.Address == nil {
+		return errs.New("Address is empty")
+	}
+	switch config.HttpProtocol {
+	case HTTP_1_1_PROTOCOL:
+	case HTTP_2_0_PROTOCOL:
+	default:
+		return errs.New("Unsupported HTTP protocol")
+	}
+	if config.Database == "" {
+		return errs.New("Database is empty")
+	}
+	return nil
 }

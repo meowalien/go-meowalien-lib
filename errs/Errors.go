@@ -29,7 +29,7 @@ func New(err interface{}, obj ...interface{}) error {
 			obj = obj[1:]
 		}
 	}
-	callerLine := runtime.CallerFileAndLine(1)
+	callerLine := runtime.Caller(1)
 	var resErr error
 	switch errTp := err.(type) {
 	case error:

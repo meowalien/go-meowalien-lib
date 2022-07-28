@@ -130,7 +130,7 @@ func (s CustomizedStatusCode) MyCode() int {
 
 func (s CustomizedStatusCode) Response(c Context, data ...interface{}) {
 	if s.ResponseStruct == nil {
-		log.Println(runtime.CallerFileAndLine(1), " - the ResponseStruct is  nil")
+		log.Println(runtime.Caller(1), " - the ResponseStruct is  nil")
 		return
 	}
 	s.ResponseAs(c, s.ResponseStruct, data...)

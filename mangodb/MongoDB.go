@@ -1,4 +1,4 @@
-package connection
+package mangodb
 
 import (
 	"context"
@@ -34,7 +34,5 @@ func (dbconf MangoDBConfiguration) Create() (db *mongo.Client, err error) {
 	if err != nil {
 		return
 	}
-
-	//DB = DB.Database(dbconf.Database)
 	return
 }

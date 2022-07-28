@@ -20,6 +20,7 @@ require (
 	go.mongodb.org/mongo-driver v1.8.4
 	go.uber.org/zap v1.19.1
 	golang.org/x/crypto v0.0.0-20211215153901-e495a2d5b3d3
+	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
 	gorm.io/driver/mysql v1.3.2
 	gorm.io/gorm v1.23.3
 )
