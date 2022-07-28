@@ -48,6 +48,10 @@ func ReadDocumentPtr[T any](ctx context.Context, f ReadDocumentFunc) (result *T,
 	var r T
 	_, err = f.ReadDocument(ctx, &r)
 	if err != nil {
+		if driver.IsNotFound(err) || driver.IsNoMoreDocuments(err) {
+			err = nil
+			return
+		}
 		err = errs.New(err)
 		return
 	}
