@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+// when AlwaysStackTrace is true, Caller() will always return CallerStackTrace() result
 var AlwaysStackTrace = false
 
 // 取得呼叫的文件與行號
