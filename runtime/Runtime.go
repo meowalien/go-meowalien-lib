@@ -37,7 +37,6 @@ func CallerStackTrace(skip int) (ans string) {
 
 func cutOffStack(ans string, skip int) string {
 	i := strings.Index(ans, "\n")
-	//line1 := ans[:i+1]
 	for skip += 1; skip > 0; skip-- {
 		i += strings.Index(ans[i+1:], "\n") + 1
 		i += strings.Index(ans[i+1:], "\n") + 1
