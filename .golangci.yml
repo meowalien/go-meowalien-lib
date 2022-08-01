@@ -3,17 +3,18 @@
 
 # options for analysis running
 run:
+  go: '1.17'
   # default concurrency is a available CPU number
   concurrency: 2
 
   # timeout for analysis, e.g. 30s, 5m, default is 1m
-  deadline: 1m
+  deadline: 5m
 
   # exit code when at least one issue was found, default is 1
   issues-exit-code: 1
 
   # include test files or not, default is true
-  tests: true
+  tests: false
 
   # list of build tags, all linters use it. Default is empty list.
   # build-tags:
@@ -51,8 +52,8 @@ run:
   # the dependency descriptions in go.mod.
   modules-download-mode: vendor
 
-# output configuration options
-#output:
+  # output configuration options
+  #output:
   ## colored-line-number|line-number|json|tab|checkstyle|code-climate, default is "colored-line-number"
   #format: code-climate
 
@@ -188,6 +189,8 @@ linters-settings:
       # WAYNE ask if this is necessary
       rangeValCopy:
         sizeThreshold: 128
+      hugeParam:
+        sizeThreshold: 128
   revive:
     rules:
       - name: var-naming
@@ -224,9 +227,10 @@ linters:
   disable:
     - scopelint
     - contextcheck
+    - exhaustive
   #   - prealloc
   #   - prealloc
-#  disable-all: true
+  #  disable-all: true
   presets:
     - bugs
   fast: false
