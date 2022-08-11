@@ -18,10 +18,16 @@ New Usage:
 */
 func New(err interface{}, obj ...interface{}) error {
 	if err == nil {
+		if obj == nil {
+			return nil
+		}
 		if len(obj) != 1 {
 			if len(obj) > 1 {
 				panic("New: obj must be one or zero")
 			}
+			return nil
+		}
+		if obj[0] == nil {
 			return nil
 		}
 		if e, ok := obj[0].(error); ok {
