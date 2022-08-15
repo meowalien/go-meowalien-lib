@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"crypto/tls"
 	"github.com/meowalien/go-meowalien-lib/errs"
 	"log"
 	"time"
@@ -9,32 +10,120 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-type RedisConfiguration struct {
-	*redis.Options
-	*redis.ClusterOptions
+type PingSettings struct {
 	PingInterval    *time.Duration
 	PingRetryTimes  *int
 	PingFailRecover chan error
 }
 
-func CreateRedisConnection(ctx context.Context, config RedisConfiguration) (client redis.Cmdable) {
-	switch {
-	case config.ClusterOptions != nil:
-		client = redis.NewClusterClient(config.ClusterOptions)
-	case config.Options != nil:
-		client = redis.NewClient(config.Options)
+type RedisConfiguration struct {
+	Network            string
+	Addrs              []string
+	DB                 int
+	Limiter            redis.Limiter
+	MaxRedirects       int
+	ReadOnly           bool
+	RouteByLatency     bool
+	RouteRandomly      bool
+	Username           string
+	Password           string
+	MaxRetries         int
+	MinRetryBackoff    time.Duration
+	MaxRetryBackoff    time.Duration
+	DialTimeout        time.Duration
+	ReadTimeout        time.Duration
+	WriteTimeout       time.Duration
+	PoolFIFO           bool
+	PoolSize           int
+	MinIdleConns       int
+	MaxConnAge         time.Duration
+	PoolTimeout        time.Duration
+	IdleTimeout        time.Duration
+	IdleCheckFrequency time.Duration
+	TLSConfig          *tls.Config
+	PingSettings       *PingSettings
+}
+
+func CreateRedisConnection(ctx context.Context, config RedisConfiguration) (client redis.Cmdable, err error) {
+	switch len(config.Addrs) {
+	case 0:
+		err = errs.New("redis configuration is empty")
+		return
+	case 1:
+		opt := redis.Options{
+			Network:            config.Network,
+			Addr:               config.Addrs[0],
+			Username:           config.Username,
+			Password:           config.Password,
+			DB:                 config.DB,
+			MaxRetries:         config.MaxRetries,
+			MinRetryBackoff:    config.MinRetryBackoff,
+			MaxRetryBackoff:    config.MaxRetryBackoff,
+			DialTimeout:        config.DialTimeout,
+			ReadTimeout:        config.ReadTimeout,
+			WriteTimeout:       config.WriteTimeout,
+			PoolFIFO:           config.PoolFIFO,
+			PoolSize:           config.PoolSize,
+			MinIdleConns:       config.MinIdleConns,
+			MaxConnAge:         config.MaxConnAge,
+			PoolTimeout:        config.PoolTimeout,
+			IdleTimeout:        config.IdleTimeout,
+			IdleCheckFrequency: config.IdleCheckFrequency,
+			TLSConfig:          config.TLSConfig,
+			Limiter:            config.Limiter,
+		}
+		client = redis.NewClient(&opt)
 	default:
-		panic(errs.New("redis configuration is empty"))
+		opt := redis.ClusterOptions{
+			Addrs:              config.Addrs,
+			MaxRedirects:       config.MaxRedirects,
+			ReadOnly:           config.ReadOnly,
+			RouteByLatency:     config.RouteByLatency,
+			RouteRandomly:      config.RouteRandomly,
+			Username:           config.Username,
+			Password:           config.Password,
+			MaxRetries:         config.MaxRetries,
+			MinRetryBackoff:    config.MinRetryBackoff,
+			MaxRetryBackoff:    config.MaxRetryBackoff,
+			DialTimeout:        config.DialTimeout,
+			ReadTimeout:        config.ReadTimeout,
+			WriteTimeout:       config.WriteTimeout,
+			PoolFIFO:           config.PoolFIFO,
+			PoolSize:           config.PoolSize,
+			MinIdleConns:       config.MinIdleConns,
+			MaxConnAge:         config.MaxConnAge,
+			PoolTimeout:        config.PoolTimeout,
+			IdleTimeout:        config.IdleTimeout,
+			IdleCheckFrequency: config.IdleCheckFrequency,
+			TLSConfig:          config.TLSConfig,
+		}
+		client = redis.NewClusterClient(&opt)
 	}
 
-	go pingLoop(ctx, client, config)
+	err = ping(ctx, client)
+	if err != nil {
+		err = errs.New(err)
+		return
+	}
 
+	if config.PingSettings != nil {
+		go pingLoop(ctx, client, *config.PingSettings)
+	}
+
+	return
+}
+
+func ping(ctx context.Context, client redis.Cmdable) (err error) {
+	if err = client.Ping(ctx).Err(); err != nil {
+		err = errs.New("ping failed: %w", err)
+		return
+	}
 	return
 }
 
 const DefaultPingRetryTimes = 20
 
-func pingLoop(ctx context.Context, client redis.Cmdable, config RedisConfiguration) {
+func pingLoop(ctx context.Context, client redis.Cmdable, config PingSettings) {
 	if config.PingInterval == nil {
 		return
 	}
@@ -65,7 +154,7 @@ func pingLoop(ctx context.Context, client redis.Cmdable, config RedisConfigurati
 
 				return
 			}
-			if err := client.Ping(ctx).Err(); err != nil {
+			if err := ping(ctx, client); err != nil {
 				select {
 				case config.PingFailRecover <- err:
 				default:
