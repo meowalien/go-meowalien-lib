@@ -29,10 +29,11 @@ func TestJsonMarshal(t *testing.T) {
 		err = errs.New(err)
 		panic(err)
 	}
-	js, err := JsonMarshal(taggedStruct[0])
+	js, sourceFilePath, err := JsonMarshal(taggedStruct[0])
 	if err != nil {
 		err = errs.New(err)
 		panic(err)
 	}
+	fmt.Println("sourceFilePath: ", sourceFilePath)
 	fmt.Println(string(js))
 }

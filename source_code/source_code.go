@@ -1,7 +1,6 @@
 package source_code
 
 import (
-	"fmt"
 	"github.com/meowalien/go-meowalien-lib/errs"
 	"go/ast"
 	"io"
@@ -107,7 +106,7 @@ func ParseDir(dir string) (sc SourceFileSet, err error) {
 
 const jsonMarshalTempFileName = "json_marshal_plugin_source_code_*.so"
 
-func JsonMarshal(code StructSourceCode) (js []byte, err error) {
+func JsonMarshal(code StructSourceCode) (js []byte, sourceFilePath string, err error) {
 	newFile := NewFile()
 	newFile.SetPackage("main")
 	err = newFile.Append(code)
@@ -121,7 +120,6 @@ func JsonMarshal(code StructSourceCode) (js []byte, err error) {
 		err = errs.New(err)
 		return
 	}
-	//pretty.Println(newFile)
 	tempFile, err := ioutil.TempFile("", jsonMarshalTempFileName)
 	if err != nil {
 		err = errs.New(err)
@@ -130,8 +128,7 @@ func JsonMarshal(code StructSourceCode) (js []byte, err error) {
 	defer func() {
 		err = errs.New(err, tempFile.Close())
 	}()
-	fmt.Println("JsonMarshal plugin: ", tempFile.Name())
-	err = newFile.BuildAsPlugin(tempFile.Name())
+	sourceFilePath, err = newFile.BuildAsPlugin(tempFile.Name())
 	if err != nil {
 		err = errs.New(err)
 		return
@@ -141,7 +138,6 @@ func JsonMarshal(code StructSourceCode) (js []byte, err error) {
 		err = errs.New(err)
 		return
 	}
-	//panic(pg)
 	sb, err := pg.Lookup("Marshal")
 	if err != nil {
 		err = errs.New(err)

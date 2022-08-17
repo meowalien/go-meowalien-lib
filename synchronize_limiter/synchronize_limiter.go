@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/meowalien/go-meowalien-lib/errs"
 	"sync"
-	"time"
 )
 
 type Stop interface {
@@ -18,7 +17,7 @@ type Wait interface {
 }
 
 type Limiter interface {
-	Do(maximumWait time.Duration, f func(ctx context.Context)) (err error)
+	Do(ctx context.Context, f func(ctx context.Context)) (err error)
 	Stop
 	Wait
 }
@@ -30,6 +29,12 @@ type Config struct {
 }
 
 func NewLimiter(cf Config) Limiter {
+	if cf.Ctx == nil {
+		cf.Ctx = context.TODO()
+	}
+	if cf.RunningThreadLimit < 1 {
+		panic("running thread limit is less than 1")
+	}
 	ctx, cancel := context.WithCancel(cf.Ctx)
 	return &limiter{
 		cancel:        cancel,
@@ -56,12 +61,10 @@ func (s *limiter) Wait() {
 	s.wait.Wait()
 }
 
-func (s *limiter) Do(maximumWait time.Duration, f func(ctx context.Context)) (err error) {
-	ctx, cancel := context.WithTimeout(s.ctx, maximumWait)
+func (s *limiter) Do(ctx context.Context, f func(ctx context.Context)) (err error) {
 	select {
 	case s.waitingTask <- func() {
 		f(ctx)
-		cancel()
 	}:
 		fmt.Println("add to waiting queue")
 		return
@@ -91,7 +94,6 @@ func (s *limiter) Do(maximumWait time.Duration, f func(ctx context.Context)) (er
 			default:
 				fmt.Println("release running thread")
 				<-s.runningThread
-				cancel()
 				s.wait.Done()
 				return
 			}

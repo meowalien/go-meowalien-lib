@@ -36,7 +36,7 @@ type FileSourceCode interface {
 	GetImports() ImportSet
 	RemoveImports()
 	FindTaggedStruct(targetComment string) (genDecl []StructSourceCode, err error)
-	BuildAsPlugin(file string) error
+	BuildAsPlugin(pluginOutput string) (sourceFilePath string, err error)
 	WriteToFile(filePath string) (err error)
 	FindFunctions(s2 string) (sc []FunctionSourceCode, err error)
 	Import(s string)
@@ -115,26 +115,25 @@ func (f fileSourceCode) Name() string {
 
 const buildAsPluginTempFileName = "plugin_source_code_*.go"
 
-func (f fileSourceCode) BuildAsPlugin(file string) (err error) {
+func (f fileSourceCode) BuildAsPlugin(pluginOutput string) (sourceFilePath string, err error) {
 	tempFile, err := ioutil.TempFile("", buildAsPluginTempFileName)
 	if err != nil {
 		err = errs.New(err)
 		return
 	}
-	fmt.Println("source file: ", tempFile.Name())
+	sourceFilePath = tempFile.Name()
 	err = f.WriteToFile(tempFile.Name())
 	if err != nil {
 		err = errs.New(err)
 		return
 	}
-	file, err = filepath.Abs(file)
+	pluginOutput, err = filepath.Abs(pluginOutput)
 	if err != nil {
 		err = errs.New(err)
 		return
 	}
-	fmt.Println("BuildAsPlugin new plugin: ", file)
 
-	cmd := exec.Command("go", "build", "-buildmode=plugin", "-o", file, tempFile.Name()) //nolint: gosec
+	cmd := exec.Command("go", "build", "-buildmode=plugin", "-o", pluginOutput, tempFile.Name()) //nolint: gosec
 	errPipe, err := cmd.StderrPipe()
 	if err != nil {
 		err = errs.New(err)
@@ -175,7 +174,6 @@ func (f fileSourceCode) BuildAsPlugin(file string) (err error) {
 
 func (f fileSourceCode) Append(set ...PartOfCode) (err error) {
 	for _, code := range set {
-		fmt.Printf("coee type %T\n", code)
 		switch cdeType := code.(type) {
 		case fileSourceCode:
 			importsInputs := cdeType.GetImports()
