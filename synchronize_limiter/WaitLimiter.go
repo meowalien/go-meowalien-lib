@@ -25,14 +25,12 @@ func (s *waitLimiter) Wait() {
 	s.wait.Wait()
 }
 
-func (s *waitLimiter) Do(ctx context.Context, f func(ctx context.Context)) (err error) {
+func (s *waitLimiter) Do(ctx context.Context, f func()) (err error) {
 	select {
 	case <-s.ctx.Done():
 		err = errs.New("limiter stopping")
 		return
-	case s.waitingTaskQueue <- func() {
-		f(ctx)
-	}:
+	case s.waitingTaskQueue <- f:
 		fmt.Println("add to waiting queue")
 		return
 	case <-ctx.Done():
@@ -48,8 +46,8 @@ func (s *waitLimiter) Do(ctx context.Context, f func(ctx context.Context)) (err 
 	}
 
 	s.wait.Add(1)
-	go func(f func(ctx context.Context)) {
-		f(ctx)
+	go func(f func()) {
+		f()
 		for {
 			select {
 			case <-s.ctx.Done():

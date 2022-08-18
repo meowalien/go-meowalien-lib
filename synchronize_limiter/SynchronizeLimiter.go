@@ -15,7 +15,7 @@ type Wait interface {
 }
 
 type Limiter interface {
-	Do(ctx context.Context, f func(ctx context.Context)) (err error)
+	Do(ctx context.Context, f func()) (err error)
 	Stop
 	Wait
 }

@@ -17,16 +17,14 @@ type dropOldLimiter struct {
 	lock             sync.Mutex
 }
 
-func (s *dropOldLimiter) Do(ctx context.Context, f func(ctx context.Context)) (err error) {
+func (s *dropOldLimiter) Do(ctx context.Context, f func()) (err error) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	select {
 	case <-s.ctx.Done():
 		err = errs.New("limiter stopping")
 		return
-	case s.waitingTaskQueue <- func() {
-		f(ctx)
-	}:
+	case s.waitingTaskQueue <- f:
 		fmt.Println("add to waiting queue")
 		return
 	case s.runningThread <- struct{}{}:
@@ -49,14 +47,12 @@ func (s *dropOldLimiter) Do(ctx context.Context, f func(ctx context.Context)) (e
 		default:
 		}
 
-		s.waitingTaskQueue <- func() {
-			f(ctx)
-		}
+		s.waitingTaskQueue <- f
 	}
 
 	s.wait.Add(1)
-	go func(f func(ctx context.Context)) {
-		f(ctx)
+	go func(f func()) {
+		f()
 		for {
 			select {
 			case <-s.ctx.Done():
