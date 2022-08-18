@@ -41,7 +41,7 @@ func (s *dropOldLimiter) Do(ctx context.Context, f func(ctx context.Context)) (e
 		return
 	default:
 		if cap(s.waitingTaskQueue) == 0 {
-			err = DropMission
+			err = errs.New("the WaitingQueueLimit should be greater than 0 in Strategy_DropOld")
 			return
 		}
 		select {

@@ -25,6 +25,8 @@ type Strategy int
 const (
 	Strategy_Wait = iota // default
 	Strategy_DropNew
+
+	// when Strategy_DropOld, the WaitingQueueLimit should be greater than 0
 	Strategy_DropOld
 )
 
@@ -63,6 +65,9 @@ func NewLimiter(cf Config) Limiter {
 			runningThread:    make(chan struct{}, cf.RunningThreadLimit),
 		}
 	case Strategy_DropOld:
+		if cf.WaitingQueueLimit == 0 {
+			panic(errs.New("the WaitingQueueLimit should be greater than 0 in Strategy_DropOld"))
+		}
 		ctx, cancel := context.WithCancel(cf.Ctx)
 		return &dropOldLimiter{
 			cancel:           cancel,
