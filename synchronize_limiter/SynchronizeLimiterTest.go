@@ -19,7 +19,7 @@ func TestLimiter(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		ii := i
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		err := l.Do(ctx, func(ctx context.Context) {
+		err := l.Do(ctx, func() {
 			fmt.Println("ST: ", ii)
 			//if ii%2 == 0 {
 			//	time.Sleep(time.Second / 4)
