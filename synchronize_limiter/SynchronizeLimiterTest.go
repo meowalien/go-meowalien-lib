@@ -18,7 +18,8 @@ func TestLimiter(t *testing.T) {
 	})
 	for i := 0; i < 100; i++ {
 		ii := i
-		err := l.Do(time.Second, func(ctx context.Context) {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		err := l.Do(ctx, func(ctx context.Context) {
 			fmt.Println("ST: ", ii)
 			//if ii%2 == 0 {
 			//	time.Sleep(time.Second / 4)
@@ -27,6 +28,7 @@ func TestLimiter(t *testing.T) {
 			//}
 			fmt.Println("EDT: ", ii)
 		})
+		cancel()
 		if err != nil {
 			err = errs.New(err)
 			panic(err)
