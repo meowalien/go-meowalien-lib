@@ -10,14 +10,9 @@ type Stop interface {
 	Stop()
 }
 
-type Wait interface {
-	Wait()
-}
-
 type Limiter interface {
 	Do(ctx context.Context, f func()) (err error)
 	Stop
-	Wait
 }
 
 type Strategy int

@@ -18,11 +18,7 @@ type waitLimiter struct {
 
 func (s *waitLimiter) Stop() {
 	s.cancel()
-	s.Wait()
-}
-
-func (s *waitLimiter) Wait() {
-	s.wait.Wait()
+	s.cleanup()
 }
 
 func (s *waitLimiter) Do(ctx context.Context, f func()) (err error) {
@@ -30,47 +26,67 @@ func (s *waitLimiter) Do(ctx context.Context, f func()) (err error) {
 	case <-s.ctx.Done():
 		err = errs.New("limiter stopping")
 		return
-	case s.waitingTaskQueue <- f:
-		fmt.Println("add to waiting queue")
-		return
 	case <-ctx.Done():
 		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			err = errs.New("timeout")
 		} else {
-			err = errs.New("limiter context done: %w", ctx)
+			err = errs.New("limiter context done: ", ctx.Err())
 		}
 		return
+	case s.waitingTaskQueue <- f:
+		fmt.Println("add to waiting queue")
+		return
+
 	case s.runningThread <- struct{}{}:
 		fmt.Println("get thread")
-		break
 	}
+
+	fmt.Println("start thread")
 
 	s.wait.Add(1)
 	go func(f func()) {
+		defer s.wait.Done()
 		f()
 		for {
 			select {
 			case <-s.ctx.Done():
-				err = errs.New("limiter stopping")
-				return
-			case <-ctx.Done():
-				if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-					err = errs.New("timeout")
-				} else {
-					err = errs.New("limiter context done: %w", ctx)
-				}
+				<-s.runningThread
 				return
 			case nextf := <-s.waitingTaskQueue:
-				fmt.Println("run from waiting queue")
 				nextf()
 				continue
 			default:
-				fmt.Println("release running thread")
 				<-s.runningThread
-				s.wait.Done()
 				return
 			}
 		}
 	}(f)
 	return
+}
+
+func (s *waitLimiter) cleanup() {
+	s.wait.Wait()
+loop:
+	for {
+		select {
+		case s.runningThread <- struct{}{}:
+			s.wait.Add(1)
+			go func() {
+				defer s.wait.Done()
+			loop1:
+				for {
+					select {
+					case f := <-s.waitingTaskQueue:
+						f()
+					default:
+						break loop1
+					}
+				}
+			}()
+		default:
+			break loop
+		}
+	}
+	s.wait.Wait()
+
 }
