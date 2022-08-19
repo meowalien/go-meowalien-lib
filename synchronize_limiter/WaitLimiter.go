@@ -11,14 +11,22 @@ import (
 type waitLimiter struct {
 	wait             sync.WaitGroup
 	waitingTaskQueue chan func()
-	runningThread    chan struct{}
+	stopChan         chan struct{}
+	threadCount      int
 	ctx              context.Context
 	cancel           context.CancelFunc
 }
 
-func (s *waitLimiter) Stop() {
+func (s *waitLimiter) Stop(ctx context.Context) {
 	s.cancel()
-	s.cleanup()
+	fmt.Println("before wait")
+	for len(s.waitingTaskQueue) != 0 {
+
+	}
+	close(s.stopChan)
+	s.wait.Wait() // wait for queue to be empty
+	fmt.Println("after wait")
+
 }
 
 func (s *waitLimiter) Do(ctx context.Context, f func()) (err error) {
@@ -34,59 +42,27 @@ func (s *waitLimiter) Do(ctx context.Context, f func()) (err error) {
 		}
 		return
 	case s.waitingTaskQueue <- f:
-		fmt.Println("add to waiting queue")
 		return
-
-	case s.runningThread <- struct{}{}:
-		fmt.Println("get thread")
 	}
-
-	fmt.Println("start thread")
-
-	s.wait.Add(1)
-	go func(f func()) {
-		defer s.wait.Done()
-		f()
-		for {
-			select {
-			case <-s.ctx.Done():
-				<-s.runningThread
-				return
-			case nextf := <-s.waitingTaskQueue:
-				nextf()
-				continue
-			default:
-				<-s.runningThread
-				return
-			}
-		}
-	}(f)
-	return
 }
-
-func (s *waitLimiter) cleanup() {
-	s.wait.Wait()
-loop:
-	for {
-		select {
-		case s.runningThread <- struct{}{}:
-			s.wait.Add(1)
-			go func() {
-				defer s.wait.Done()
-			loop1:
-				for {
-					select {
-					case f := <-s.waitingTaskQueue:
-						f()
-					default:
-						break loop1
-					}
+func (s *waitLimiter) startConsumer() {
+	s.wait.Add(s.threadCount)
+	for i := 0; i < s.threadCount; i++ {
+		fmt.Println("start thread: ", i)
+		go func(i int) {
+			defer s.wait.Done()
+			for {
+				select {
+				case <-s.stopChan:
+					return
+				case f := <-s.waitingTaskQueue:
+					fmt.Println("run Thead: ", len(s.waitingTaskQueue))
+					f()
+					continue
 				}
-			}()
-		default:
-			break loop
-		}
-	}
-	s.wait.Wait()
+			}
 
+			fmt.Println("close thread: ", i)
+		}(i)
+	}
 }

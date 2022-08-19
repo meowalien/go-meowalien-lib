@@ -11,32 +11,59 @@ import (
 func TestLimiter(t *testing.T) {
 	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	//defer cancel()
-	l := NewLimiter(Config{
+	limiter := NewLimiter(Config{
 		QueueFullStrategy:  Strategy_Wait,
-		WaitingQueueLimit:  10,
+		WaitingQueueLimit:  1024,
 		RunningThreadLimit: 1,
 	})
-	for i := 0; i < 100; i++ {
-		ii := i
-		fmt.Println("put : ", ii)
-		ctx, _ := context.WithTimeout(context.Background(), time.Second*1)
-		err := l.Do(ctx, func() {
-			fmt.Println("ST: ", ii)
-			//if ii%2 == 0 {
-			//	time.Sleep(time.Second / 4)
-			//} else {
-			time.Sleep(time.Second / 2)
-			//}
-			fmt.Println("EDT: ", ii)
-		})
-		if err != nil {
-			err = errs.New(err)
-			//panic(err)
-			fmt.Println(err)
+	//wg := sync.WaitGroup{}
+	//wg.Add(1)
+	//go func() {
+	//	defer wg.Done()
+	go func() {
+		for i := 0; i < 10000; i++ {
+			ii := i
+			ctx, _ := context.WithTimeout(context.Background(), time.Second*100)
+			//wg.Add(1)
+			err := limiter.Do(ctx, func() {
+				//wg.Done()
+				fmt.Println("AAAAAAAAAAAAAAAAAAA: ", ii)
+				time.Sleep(time.Microsecond * 20)
+				//l.snapshot()
+				//cancel()
+			})
+			if err != nil {
+				err = errs.New(err)
+				fmt.Println(err)
+				return
+			}
 		}
-	}
-	time.Sleep(time.Second * 2)
+	}()
+
+	//}()
+	//wg.Add(1)
+	//go func() {
+	//	defer wg.Done()
+	//	for i := 0; i < 10000; i++ {
+	//		ii := i
+	//		ctx, _ := context.WithTimeout(context.Background(), time.Second*10)
+	//		wg.Add(1)
+	//		err := limiter.Do(ctx, func() {
+	//			wg.Done()
+	//			fmt.Println("AAAAAAAAAAAAAAAAAAA: ", ii)
+	//			//time.Sleep(time.Microsecond * 26)
+	//			//l.snapshot()
+	//			//cancel()
+	//		})
+	//		if err != nil {
+	//			err = errs.New(err)
+	//			fmt.Println(err)
+	//		}
+	//	}
+	//}()
+	time.Sleep(time.Second)
 	fmt.Println("\t\tstart to wait")
-	l.Stop()
+	limiter.Stop(context.TODO())
+	//wg.Wait()
 
 }

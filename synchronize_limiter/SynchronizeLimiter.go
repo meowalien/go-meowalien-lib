@@ -7,7 +7,7 @@ import (
 )
 
 type Stop interface {
-	Stop()
+	Stop(ctx context.Context)
 }
 
 type Limiter interface {
@@ -19,10 +19,6 @@ type Strategy int
 
 const (
 	Strategy_Wait = iota // default
-	Strategy_DropNew
-
-	// when Strategy_DropOld, the WaitingQueueLimit should be greater than 0
-	Strategy_DropOld
 )
 
 type Config struct {
@@ -45,33 +41,16 @@ func NewLimiter(cf Config) Limiter {
 	switch cf.QueueFullStrategy {
 	case Strategy_Wait:
 		ctx, cancel := context.WithCancel(cf.Ctx)
-		return &waitLimiter{
+		l := &waitLimiter{
+			stopChan:         make(chan struct{}),
 			cancel:           cancel,
 			ctx:              ctx,
 			waitingTaskQueue: make(chan func(), cf.WaitingQueueLimit),
-			runningThread:    make(chan struct{}, cf.RunningThreadLimit),
+			threadCount:      cf.RunningThreadLimit,
 		}
-	case Strategy_DropNew:
-		ctx, cancel := context.WithCancel(cf.Ctx)
-		return &dropNewLimiter{
-			cancel:           cancel,
-			ctx:              ctx,
-			waitingTaskQueue: make(chan func(), cf.WaitingQueueLimit),
-			runningThread:    make(chan struct{}, cf.RunningThreadLimit),
-		}
-	case Strategy_DropOld:
-		if cf.WaitingQueueLimit == 0 {
-			panic(errs.New("the WaitingQueueLimit should be greater than 0 in Strategy_DropOld"))
-		}
-		ctx, cancel := context.WithCancel(cf.Ctx)
-		return &dropOldLimiter{
-			cancel:           cancel,
-			ctx:              ctx,
-			waitingTaskQueue: make(chan func(), cf.WaitingQueueLimit),
-			runningThread:    make(chan struct{}, cf.RunningThreadLimit),
-		}
+		l.startConsumer()
+		return l
 	default:
 		panic(errs.New("unsupported queue full strategy: %v", cf.QueueFullStrategy))
 	}
-
 }
