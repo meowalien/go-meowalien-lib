@@ -11,48 +11,53 @@ import (
 )
 
 type PingSettings struct {
-	PingInterval    *time.Duration
-	PingRetryTimes  *int
-	PingFailRecover chan error
+	PingInterval   time.Duration `json:"ping_interval,omitempty"`
+	PingRetryLimit int           `json:"ping_retry_times,omitempty"`
 }
 
-type RedisConfiguration struct {
-	Network            string
-	Addrs              []string
-	DB                 int
-	Limiter            redis.Limiter
-	MaxRedirects       int
-	ReadOnly           bool
-	RouteByLatency     bool
-	RouteRandomly      bool
-	Username           string
-	Password           string
-	MaxRetries         int
-	MinRetryBackoff    time.Duration
-	MaxRetryBackoff    time.Duration
-	DialTimeout        time.Duration
-	ReadTimeout        time.Duration
-	WriteTimeout       time.Duration
-	PoolFIFO           bool
-	PoolSize           int
-	MinIdleConns       int
-	MaxConnAge         time.Duration
-	PoolTimeout        time.Duration
-	IdleTimeout        time.Duration
-	IdleCheckFrequency time.Duration
-	TLSConfig          *tls.Config
-	PingSettings       *PingSettings
+type ConnectionConfig struct {
+	Address            []string      `json:"addr"`
+	Password           string        `json:"password,omitempty"`
+	PoolSize           int           `json:"pool_size,omitempty"`
+	MaxRetries         int           `json:"max_retries,omitempty"`
+	MinRetryBackoff    time.Duration `json:"min_retry_backoff,omitempty"`
+	MaxRetryBackoff    time.Duration `json:"max_retry_backoff,omitempty"`
+	Network            string        `json:"network,omitempty"`
+	DB                 int           `json:"db,omitempty"`
+	Limiter            redis.Limiter `json:"limiter,omitempty"`
+	MaxRedirects       int           `json:"max_redirects,omitempty"`
+	ReadOnly           bool          `json:"read_only,omitempty"`
+	RouteByLatency     bool          `json:"route_by_latency,omitempty"`
+	RouteRandomly      bool          `json:"route_randomly,omitempty"`
+	Username           string        `json:"username,omitempty"`
+	DialTimeout        time.Duration `json:"dial_timeout,omitempty"`
+	ReadTimeout        time.Duration `json:"read_timeout,omitempty"`
+	WriteTimeout       time.Duration `json:"write_timeout,omitempty"`
+	PoolFIFO           bool          `json:"pool_fifo,omitempty"`
+	MinIdleConns       int           `json:"min_idle_conns,omitempty"`
+	MaxConnAge         time.Duration `json:"max_conn_age,omitempty"`
+	PoolTimeout        time.Duration `json:"pool_timeout,omitempty"`
+	IdleTimeout        time.Duration `json:"idle_timeout,omitempty"`
+	IdleCheckFrequency time.Duration `json:"idle_check_frequency,omitempty"`
+	TLSConfig          *tls.Config   `json:"tls_config,omitempty"`
+	PingSettings       *PingSettings `json:"ping_settings,omitempty"`
+	OnError            func(error)   `json:"-"`
 }
 
-func CreateRedisConnection(ctx context.Context, config RedisConfiguration) (client redis.Cmdable, err error) {
-	switch len(config.Addrs) {
+func CreateRedisConnection(ctx context.Context, config ConnectionConfig) (client redis.Cmdable, err error) { //nolint:gocritic
+	if config.OnError == nil {
+		config.OnError = func(err error) {
+			log.Println(err.Error())
+		}
+	}
+	switch len(config.Address) {
 	case 0:
 		err = errs.New("redis configuration is empty")
 		return
 	case 1:
 		opt := redis.Options{
 			Network:            config.Network,
-			Addr:               config.Addrs[0],
+			Addr:               config.Address[0],
 			Username:           config.Username,
 			Password:           config.Password,
 			DB:                 config.DB,
@@ -75,7 +80,7 @@ func CreateRedisConnection(ctx context.Context, config RedisConfiguration) (clie
 		client = redis.NewClient(&opt)
 	default:
 		opt := redis.ClusterOptions{
-			Addrs:              config.Addrs,
+			Addrs:              config.Address,
 			MaxRedirects:       config.MaxRedirects,
 			ReadOnly:           config.ReadOnly,
 			RouteByLatency:     config.RouteByLatency,
@@ -107,7 +112,7 @@ func CreateRedisConnection(ctx context.Context, config RedisConfiguration) (clie
 	}
 
 	if config.PingSettings != nil {
-		go pingLoop(ctx, client, *config.PingSettings)
+		go pingLoop(ctx, client, *config.PingSettings, config.OnError)
 	}
 
 	return
@@ -122,52 +127,39 @@ func ping(ctx context.Context, client redis.Cmdable) (err error) {
 }
 
 const DefaultPingRetryTimes = 20
+const DefaultPingInterval = time.Second * 3
 
-func pingLoop(ctx context.Context, client redis.Cmdable, config PingSettings) {
-	if config.PingInterval == nil {
+func pingLoop(ctx context.Context, client redis.Cmdable, config PingSettings, onError func(error)) {
+	if config.PingInterval == 0 {
+		config.PingInterval = DefaultPingInterval
 		return
 	}
-	var pingRetryLimit = DefaultPingRetryTimes
-	if config.PingRetryTimes != nil {
-		pingRetryLimit = *config.PingRetryTimes
+	if config.PingRetryLimit == 0 {
+		config.PingRetryLimit = DefaultPingRetryTimes
 	}
-	pingRetry := pingRetryLimit
-	timer := time.NewTimer(*config.PingInterval)
+	pingRetry := config.PingRetryLimit
+	timer := time.NewTimer(config.PingInterval)
 	for {
 		select {
 		case <-ctx.Done():
-			if config.PingFailRecover != nil {
-				select {
-				case config.PingFailRecover <- errs.New("ping loop is closed by context"):
-				default:
-				}
-			}
+			log.Println(errs.New("ping loop is closed by context"))
 			return
 		case <-timer.C:
 			if pingRetry <= 0 {
-				err := errs.New("ping redis failed after %d times retry", pingRetryLimit)
-				select {
-				case config.PingFailRecover <- err:
-				default:
-					log.Println(err.Error())
-				}
-
+				err := errs.New("ping redis failed after %d times retry", config.PingRetryLimit)
+				onError(err)
 				return
 			}
 			if err := ping(ctx, client); err != nil {
-				select {
-				case config.PingFailRecover <- err:
-				default:
-					log.Println(err.Error())
-				}
+				onError(err)
 				pingRetry--
 			} else {
-				pingRetry = pingRetryLimit
+				pingRetry = config.PingRetryLimit
 			}
 			if !timer.Stop() {
 				<-timer.C
 			}
-			timer.Reset(*config.PingInterval)
+			timer.Reset(config.PingInterval)
 		}
 	}
 }

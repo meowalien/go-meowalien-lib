@@ -24,7 +24,7 @@ type ArangoDBConnectionConfig struct {
 	Address         []string
 	UserName        string
 	Password        string
-	HttpProtocol    _HTTP_PROTOCOL
+	HTTPProtocol    _HTTP_PROTOCOL
 	SSLCert         bool
 	ConnectionLimit int
 	Database        string
@@ -67,7 +67,7 @@ func createConnectionByHTTPProtocol(config ArangoDBConnectionConfig) (conn drive
 		err = errs.New(err)
 		return
 	}
-	switch config.HttpProtocol {
+	switch config.HTTPProtocol {
 	case HTTP_1_1_PROTOCOL:
 		transport := &defaulthttp.Transport{
 			DialContext: (&net.Dialer{
@@ -127,7 +127,7 @@ func checkFormat(config ArangoDBConnectionConfig) error {
 	if config.Address == nil {
 		return errs.New("Address is empty")
 	}
-	switch config.HttpProtocol {
+	switch config.HTTPProtocol {
 	case HTTP_1_1_PROTOCOL:
 	case HTTP_2_0_PROTOCOL:
 	default:
