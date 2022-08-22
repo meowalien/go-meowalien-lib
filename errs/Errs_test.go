@@ -105,7 +105,8 @@ func testFunc() (err error) {
 		err1 := errors.New("Error 2")
 		err = New(err, err1)
 	}()
-	return New("Error 1")
+	erra := New("Error 1")
+	return New(erra)
 }
 
 func TestErrorAndNil(t *testing.T) {

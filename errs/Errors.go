@@ -12,5 +12,5 @@ New Usage:
 	New(error) make a withLineError of error
 */
 var New = func(err any, obj ...any) *withLineError {
-	return newWithLineErrorFromAny(err, runtime.Caller(1), obj...)
+	return newWithLineErrorFromAny(true, err, runtime.Caller(1), obj...)
 }
