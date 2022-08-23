@@ -1,7 +1,6 @@
 package broker
 
 import (
-	"github.com/meowalien/go-meowalien-lib/uuid"
 	"log"
 	"runtime/debug"
 	"time"
@@ -24,7 +23,7 @@ var threadLimiter = make(chan struct{}, MaximumBroadcastThreads)
 
 type Broker interface {
 	//start()
-	Subscribe(filter Filter) *Client
+	Subscribe(uuid string, filter Filter) *Client
 	unsubscribe(msgCh *Client)
 	Publish(msg interface{}, except ...*Client)
 }
@@ -72,10 +71,6 @@ func NewBroker(option *Options) Broker {
 
 	go bk.start()
 	return bk
-}
-
-func getUUID() string {
-	return uuid.NewUUID("B")
 }
 
 // start should be called before broker use, it starts up the broker
@@ -144,11 +139,11 @@ func (b *broker) stop() {
 }
 
 // Subscribe will create a new Client which Listen on new published message
-func (b *broker) Subscribe(filter Filter) *Client {
+func (b *broker) Subscribe(uuid string, filter Filter) *Client {
 	if !b.isActive {
 		panic("the broker is not active, please start it up.")
 	}
-	msgCh := &Client{broker: b, C: make(chan interface{}, b.clientQueueSize), filter: filter, uuid: getUUID()}
+	msgCh := &Client{broker: b, C: make(chan interface{}, b.clientQueueSize), filter: filter, uuid: uuid}
 	b.subscribeChan <- msgCh
 	return msgCh
 }
