@@ -22,29 +22,25 @@ func (w *withLineError) Unwrap() error {
 }
 
 func (w *withLineError) Error() (s string) {
-	tabs := strings.Repeat("\t", w.Layer())
+	tabs := strings.Repeat("\t", w.layer)
 	s = fmt.Sprintf("%s%s: %s", tabs, w.lineCode, w.error.Error())
 	if w.parent == nil {
 		return
 	} else {
-		return w.parent.FormatChild(s)
+		return w.parent.formatChild(s)
 	}
 
 }
 
-func (w withLineError) Layer() (l int) {
-	return w.layer
-}
-
-func (w *withLineError) Wrap(a any, caller string) (res *withLineError) {
+func (w *withLineError) wrap(a any, caller string) (res *withLineError) {
 	ne := newWithLineErrorFromAny(false, a, caller)
 	ne.layer = w.layer + 1
 	ne.parent = w
 	return ne
 }
 
-func (w *withLineError) FormatChild(childErrStr string) (res string) {
-	tabs := strings.Repeat("\t", w.Layer())
+func (w *withLineError) formatChild(childErrStr string) (res string) {
+	tabs := strings.Repeat("\t", w.layer)
 	res = fmt.Sprintf("%s%s: %s {\n%s%s\n%s}",
 		tabs,
 		w.lineCode,
@@ -56,11 +52,11 @@ func (w *withLineError) FormatChild(childErrStr string) (res string) {
 	if w.parent == nil {
 		return
 	} else {
-		return w.parent.FormatChild(res)
+		return w.parent.formatChild(res)
 	}
 }
 
-func (w withLineError) Deliver(caller string) *withLineError {
+func (w withLineError) deliver(caller string) *withLineError {
 	w.lineCode = fmt.Sprintf("%s => %s", w.lineCode, caller)
 	x := w
 	return &x
@@ -82,14 +78,14 @@ func newWithLineErrorFromAny(deliver bool, err any, caller string, obj ...any) *
 		if !ok {
 			parentErr = newWithLineErrorFromError(errTp, caller)
 		} else if deliver {
-			parentErr = parentErr.Deliver(caller)
+			parentErr = parentErr.deliver(caller)
 		}
 
 		for _, a := range obj {
 			if a == nil {
 				continue
 			}
-			parentErr = parentErr.Wrap(a, caller)
+			parentErr = parentErr.wrap(a, caller)
 		}
 		return parentErr
 	default:
