@@ -4,44 +4,51 @@ import (
 	"context"
 	"crypto/tls"
 	"github.com/arangodb/go-driver"
+	"github.com/arangodb/go-driver/cluster"
 	"github.com/arangodb/go-driver/http"
 	"github.com/meowalien/go-meowalien-lib/errs"
 	"golang.org/x/net/http2"
 	"net"
 	defaulthttp "net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
-type _HTTP_PROTOCOL int
+type _HTTP_PROTOCOL string
 
 const (
-	HTTP_1_1_PROTOCOL _HTTP_PROTOCOL = iota
-	HTTP_2_0_PROTOCOL _HTTP_PROTOCOL = iota
+	HTTP_1_1_PROTOCOL _HTTP_PROTOCOL = "1.1"
+	HTTP_2_0_PROTOCOL _HTTP_PROTOCOL = "2.0"
 )
 
 type ArangoDBConnectionConfig struct {
-	Address         []string
-	UserName        string
-	Password        string
-	HTTPProtocol    _HTTP_PROTOCOL
-	SSLCert         bool
-	ConnectionLimit int
-	Database        string
+	// the scheme could be http:// or https://, if scheme not set, default as http://
+	Address          []string
+	UserName         string
+	Password         string
+	HTTPProtocol     _HTTP_PROTOCOL
+	ConnectionLimit  int
+	DefaultDoTimeout time.Duration
+	// json 0, velocypack 1
+	ContentType        driver.ContentType
+	DontFollowRedirect bool
+	FailOnRedirect     bool
+	InsecureSkipVerify bool
 }
 
-func NewDatabaseConnection(ctx context.Context, config ArangoDBConnectionConfig) (dbConn driver.Database, err error) {
+func NewClient(ctx context.Context, config ArangoDBConnectionConfig) (c driver.Client, err error) {
 	err = checkFormat(config)
 	if err != nil {
 		return
 	}
-	conn, err := createConnectionByHTTPProtocol(config)
+	conn, err := createConnection(config)
 	if err != nil {
 		err = errs.New(err)
 		return
 	}
 
-	c, err := driver.NewClient(driver.ClientConfig{
+	c, err = driver.NewClient(driver.ClientConfig{
 		Connection:     conn,
 		Authentication: driver.BasicAuthentication(config.UserName, config.Password),
 	})
@@ -53,67 +60,65 @@ func NewDatabaseConnection(ctx context.Context, config ArangoDBConnectionConfig)
 		err = errs.New(err1)
 		return
 	}
-	dbConn, err = c.Database(ctx, config.Database)
-	if err != nil {
-		err = errs.New(err)
-		return
-	}
 	return
 }
 
-func createConnectionByHTTPProtocol(config ArangoDBConnectionConfig) (conn driver.Connection, err error) {
+func createConnection(config ArangoDBConnectionConfig) (conn driver.Connection, err error) {
+	var tlsConfig *tls.Config = nil
 	dbIPs, err := formatAsUrls(config.Address)
 	if err != nil {
 		err = errs.New(err)
 		return
 	}
+
+	for _, p := range dbIPs {
+		if strings.HasPrefix(p, "https://") {
+			tlsConfig = &tls.Config{InsecureSkipVerify: config.InsecureSkipVerify}
+		}
+	}
+
+	var transport defaulthttp.RoundTripper
 	switch config.HTTPProtocol {
 	case HTTP_1_1_PROTOCOL:
-		transport := &defaulthttp.Transport{
-			DialContext: (&net.Dialer{
-				KeepAlive: 60 * time.Second,
-			}).DialContext,
-			MaxIdleConns:          0,
-			IdleConnTimeout:       30 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-		}
-		conn, err = http.NewConnection(http.ConnectionConfig{
-			Endpoints: dbIPs,
-			ConnLimit: config.ConnectionLimit,
-			Transport: transport,
-		})
-		if err != nil {
-			err = errs.New(err)
-			return
-		}
 	case HTTP_2_0_PROTOCOL:
-		transport := &http2.Transport{
+		transport = &http2.Transport{
 			AllowHTTP: true,
 			DialTLS: func(network, addr string, cfg *tls.Config) (net.Conn, error) {
 				return net.Dial(network, addr)
 			},
 		}
-		conn, err = http.NewConnection(http.ConnectionConfig{
-			Endpoints: dbIPs,
-			ConnLimit: config.ConnectionLimit,
-			Transport: transport,
-		})
-		if err != nil {
-			err = errs.New(err)
-			return
-		}
 	default:
 		err = errs.New("Unsupported HTTP protocol")
 		return
 	}
-
+	conn, err = http.NewConnection(http.ConnectionConfig{
+		Endpoints:          dbIPs,
+		TLSConfig:          tlsConfig,
+		Transport:          transport,
+		DontFollowRedirect: config.DontFollowRedirect,
+		FailOnRedirect:     config.FailOnRedirect,
+		ConnectionConfig:   cluster.ConnectionConfig{DefaultTimeout: config.DefaultDoTimeout},
+		ContentType:        config.ContentType,
+		ConnLimit:          config.ConnectionLimit,
+	})
+	if err != nil {
+		err = errs.New(err)
+		return
+	}
 	return
 }
 
 func formatAsUrls(host []string) ([]string, error) {
 	for i, h := range host {
 		var u *url.URL
-		u, err := url.Parse("http://" + h)
+		var err error
+		if strings.HasPrefix(h, "http://") {
+			u, err = url.Parse(h)
+		} else if strings.HasPrefix(h, "https://") {
+			u, err = url.Parse(h)
+		} else {
+			u, err = url.Parse("http://" + h)
+		}
 		if err != nil {
 			err = errs.New(err)
 			return nil, err
@@ -133,8 +138,6 @@ func checkFormat(config ArangoDBConnectionConfig) error {
 	default:
 		return errs.New("Unsupported HTTP protocol")
 	}
-	if config.Database == "" {
-		return errs.New("Database is empty")
-	}
+
 	return nil
 }

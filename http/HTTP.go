@@ -18,7 +18,7 @@ import (
 	"github.com/meowalien/go-meowalien-lib/format/convert"
 )
 
-func ConvertFormRequestToMap(r *http.Request) (cMap map[string]interface{}, err error) {
+func ConvertRequestToMap(r *http.Request) (cMap map[string]interface{}, err error) {
 	cMap = make(map[string]interface{})
 	switch r.Method {
 	case "GET":
@@ -26,7 +26,6 @@ func ConvertFormRequestToMap(r *http.Request) (cMap map[string]interface{}, err 
 		for k, v := range query {
 			cMap[k] = v[0]
 		}
-
 	case "POST":
 		err = r.ParseForm()
 		for k, v := range r.Form {
@@ -37,7 +36,7 @@ func ConvertFormRequestToMap(r *http.Request) (cMap map[string]interface{}, err 
 }
 
 // 發送urlencodedFORM
-func DoURLEncodedFormRequest(endpoint string, req map[string]interface{}) ([]byte, error) {
+func DoURLEncodedFormRequest(endpoint string, method string, req map[string]interface{}) ([]byte, error) {
 	data := url.Values{}
 	for s, i := range req {
 		data.Add(s, fmt.Sprintf("%v", i))
@@ -46,7 +45,7 @@ func DoURLEncodedFormRequest(endpoint string, req map[string]interface{}) ([]byt
 	dataEncode := data.Encode()
 
 	client := &http.Client{}
-	r, err := http.NewRequestWithContext(context.TODO(), "POST", endpoint, strings.NewReader(dataEncode)) // URL-encoded payload
+	r, err := http.NewRequestWithContext(context.TODO(), method, endpoint, strings.NewReader(dataEncode)) // URL-encoded payload
 	if err != nil {
 		return nil, fmt.Errorf("error when NewRequest: %w", err)
 	}

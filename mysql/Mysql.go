@@ -22,9 +22,10 @@ type MysqlConnectConfiguration struct {
 	Port     string
 }
 
+const mysqlDBConnectionFormat = "%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local"
+
 func CreateMysqlDBConnection(dbconf *MysqlConnectConfiguration) (*sql.DB, error) {
-	dsn := "%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local"
-	dsn = fmt.Sprintf(dsn, dbconf.User, dbconf.Password, dbconf.Host, dbconf.Port, dbconf.Database)
+	dsn := fmt.Sprintf(mysqlDBConnectionFormat, dbconf.User, dbconf.Password, dbconf.Host, dbconf.Port, dbconf.Database)
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		return nil, errs.New(err)

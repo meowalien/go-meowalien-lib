@@ -2,32 +2,30 @@ package math
 
 import (
 	"fmt"
+	"github.com/meowalien/go-meowalien-lib/generic"
 	"github.com/shopspring/decimal"
+	"golang.org/x/exp/constraints"
 	"math"
 )
 
 // 絕對值
-func AbsInt64(x int64) int64 {
-	if x >= 0 {
-		return x
-	} else {
-		return x * -1
-	}
+func Abs[T constraints.Signed | constraints.Float](x T) T {
+	return generic.IFF(x < 0, -x, x)
 }
 
 // 四捨五入
-func Round(x float64) int {
-	return int(math.Floor(x + 0.5))
+func Round[T constraints.Float](val T, precision float64) T {
+	ratio := math.Pow(10, precision)
+	return T(math.Round(float64(val)*ratio) / ratio)
 }
 
 // 10進制數字位數
-func IntLength(a int64) int {
-	count := 0
+func IntLength[T constraints.Integer](a T) (count T) {
 	for a != 0 {
 		a /= 10
 		count++
 	}
-	return count
+	return
 }
 
 // return true if overflow

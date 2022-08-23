@@ -2,6 +2,7 @@ package io
 
 import (
 	"fmt"
+	"github.com/meowalien/go-meowalien-lib/errs"
 	"os"
 )
 
@@ -9,9 +10,7 @@ import (
 func WriteToNewFile(fp string, bin []byte) (err error) {
 	fo, err := os.Create(fp)
 	if err != nil {
-		//abs, _ := filepath.Abs(fp)
-		//fmt.Println("abs: ",abs)
-		return fmt.Errorf("error when os.create: %w", err)
+		return errs.New("error when os.create: %w", err)
 	}
 	defer func(fo *os.File) {
 		e := fo.Close()
@@ -22,7 +21,7 @@ func WriteToNewFile(fp string, bin []byte) (err error) {
 
 	_, err = fo.Write(bin)
 	if err != nil {
-		return fmt.Errorf("error Write file: %w", err)
+		return errs.New("error Write file: %w", err)
 	}
 	return nil
 }

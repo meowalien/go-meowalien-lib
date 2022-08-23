@@ -9,15 +9,15 @@ import (
 // JsonTypeStruct provide a simple solution
 // to make struct use as Json in SQL query
 type JsonTypeStruct struct {
-	Thing interface{}
+	Obj interface{}
 }
 
 func (m JsonTypeStruct) Value() (driver.Value, error) {
-	j, err := json.Marshal(m.Thing)
+	j, err := json.Marshal(m.Obj)
 	if err != nil {
 		return nil, err
 	}
-	return driver.Value(j), nil
+	return driver.Value(string(j)), nil
 }
 
 func (m *JsonTypeStruct) Scan(src interface{}) error {

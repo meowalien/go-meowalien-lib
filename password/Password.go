@@ -47,13 +47,9 @@ func HashPassword(password string, pepper string, saltLength int) (string, strin
 }
 
 // CheckPasswordHash check if the given password, hashedPassword, and salt match.
-func CheckPasswordHash(password, hash, pepper, salt string, passwordEncryption bool) bool {
-	if password == "" || ((pepper == "" || salt == "") && passwordEncryption) {
+func CheckPasswordHash(password, hash, pepper, salt string) bool {
+	if password == "" || pepper == "" || salt == "" || hash == "" {
 		return false
 	}
-	if !passwordEncryption {
-		return password == hash
-	}
-	err := bcrypt.CompareHashAndPassword([]byte(hash), append([]byte(password), pepper+salt...))
-	return err == nil
+	return bcrypt.CompareHashAndPassword([]byte(hash), append([]byte(password), pepper+salt...)) == nil
 }

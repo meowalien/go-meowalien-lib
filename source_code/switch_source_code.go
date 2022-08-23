@@ -19,5 +19,4 @@ func (s switchSourceCode) Name() string {
 
 func (s switchSourceCode) InsertCase(callCase *ast.CaseClause) {
 	s.SwitchStmt.Body.List = append(s.SwitchStmt.Body.List, callCase)
-	//pretty.Println("InsertCase: ", s.Body.List)
 }

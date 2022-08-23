@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/meowalien/go-meowalien-lib/debug"
 	"testing"
 )
 
@@ -15,7 +16,7 @@ func TestCaller(t *testing.T) {
 }
 
 func TestCallerWhenAwaysStackTrace(t *testing.T) {
-	AlwaysStackTrace = true
+	debug.DebugMode = true
 	s := Caller(0)
 	fmt.Println(s)
 }

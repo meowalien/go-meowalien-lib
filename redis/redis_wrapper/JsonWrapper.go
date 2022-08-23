@@ -1,4 +1,4 @@
-package redisdb
+package redis_wrapper
 
 import (
 	"context"
@@ -9,20 +9,26 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-type RedisClientWrapper struct {
-	*redis.Client
+type JsonWrapper struct {
+	redis.Cmdable
 }
 
-func (c *RedisClientWrapper) SetStruct(ctx context.Context, key string, value interface{}, expiration time.Duration) (string, error) {
+func (j JsonWrapper) Wrap(c redis.Cmdable) redis.Cmdable {
+	return &JsonWrapper{
+		Cmdable: c,
+	}
+}
+
+func (j *JsonWrapper) SetStruct(ctx context.Context, key string, value interface{}, expiration time.Duration) (string, error) {
 	p, err := json.Marshal(value)
 	if err != nil {
 		return "", err
 	}
-	return c.Set(ctx, key, p, expiration).Result()
+	return j.Set(ctx, key, p, expiration).Result()
 }
 
-func (c *RedisClientWrapper) GetStruct(ctx context.Context, key string, stk interface{}) error {
-	p, err := c.Get(ctx, key).Result()
+func (j *JsonWrapper) GetStruct(ctx context.Context, key string, stk interface{}) error {
+	p, err := j.Get(ctx, key).Result()
 	if err != nil {
 		return err
 	}
@@ -38,7 +44,7 @@ func (c *RedisClientWrapper) GetStruct(ctx context.Context, key string, stk inte
 	}
 }
 
-func (c *RedisClientWrapper) HSetStruct(ctx context.Context, name string, key interface{}, value interface{}) (int64, error) {
+func (j *JsonWrapper) HSetStruct(ctx context.Context, name string, key interface{}, value interface{}) (int64, error) {
 	switch key.(type) {
 	case string:
 	default:
@@ -57,10 +63,10 @@ func (c *RedisClientWrapper) HSetStruct(ctx context.Context, name string, key in
 		}
 		value = p
 	}
-	return c.HSet(ctx, name, key, value).Result()
+	return j.HSet(ctx, name, key, value).Result()
 }
 
-func (c *RedisClientWrapper) HGetStruct(ctx context.Context, key interface{}, field interface{}, value interface{}) error {
+func (j *JsonWrapper) HGetStruct(ctx context.Context, key interface{}, field interface{}, value interface{}) error {
 	sKey, sField := "", ""
 
 	switch k := key.(type) {
@@ -85,7 +91,7 @@ func (c *RedisClientWrapper) HGetStruct(ctx context.Context, key interface{}, fi
 		sField = string(p)
 	}
 
-	res, err := c.HGet(ctx, sKey, sField).Result()
+	res, err := j.HGet(ctx, sKey, sField).Result()
 	if err != nil {
 		return fmt.Errorf("error when HGet")
 	}

@@ -2,16 +2,13 @@ package io
 
 import (
 	"errors"
+	"github.com/meowalien/go-meowalien-lib/errs"
 	"io"
 )
 
-var errInvalidWrite = errors.New("invalid write result")
+var ErrInvalidWrite = errors.New("invalid write result")
 
 func CopyBufferWithCallback(dst io.Writer, src io.Reader, buf []byte, callback func(count int, written int64)) (written int64, err error) {
-	//if wt, ok := src.(io.WriterTo); ok {
-	//	return wt.WriteTo(dst)
-	//}
-	//fmt.Printf("res.Body8: %v",src)
 	if buf == nil {
 		err = errors.New("bf is nil")
 		return
@@ -26,16 +23,16 @@ func CopyBufferWithCallback(dst io.Writer, src io.Reader, buf []byte, callback f
 			if nw < 0 || nr < nw {
 				nw = 0
 				if ew == nil {
-					ew = errInvalidWrite
+					ew = ErrInvalidWrite
 				}
 			}
 			written += int64(nw)
 			if ew != nil {
-				err = ew
+				err = errs.New(err, ew)
 				break
 			}
 			if nr != nw {
-				err = io.ErrShortWrite
+				err = errs.New(err, io.ErrShortWrite)
 				break
 			}
 		}

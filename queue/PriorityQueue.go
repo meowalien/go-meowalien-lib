@@ -1,28 +1,39 @@
 package queue
 
+import "golang.org/x/exp/constraints"
 import (
 	sheep "container/heap"
 )
 
-type PriorityQueue struct {
-	heap
+type PriorityQueue[T constraints.Ordered] interface {
+	Queue[T]
 }
 
-func (p *PriorityQueue) Push(item SortableItem) {
+func NewPriorityQueue[T constraints.Ordered](cap int) PriorityQueue[T] {
+	return &priorityQueue[T]{
+		heap: make([]T, 0, cap),
+	}
+}
+
+type priorityQueue[T constraints.Ordered] struct {
+	heap[T]
+}
+
+func (p *priorityQueue[T]) Push(item T) {
 	sheep.Push(&p.heap, item)
 }
 
-func (p *PriorityQueue) Pop() SortableItem {
-	return sheep.Pop(&p.heap).(SortableItem)
+func (p *priorityQueue[T]) Pop() T {
+	return sheep.Pop(&p.heap).(T)
 }
 
-func (p *PriorityQueue) Peek() SortableItem {
-	return p.heap.Peek().(SortableItem)
+func (p *priorityQueue[T]) Peek() T {
+	return p.heap.Peek().(T)
 }
 
-func (p *PriorityQueue) Len() int {
+func (p *priorityQueue[T]) Len() int {
 	return p.heap.Len()
 }
-func (p *PriorityQueue) Cap() int {
+func (p *priorityQueue[T]) Cap() int {
 	return p.heap.Cap()
 }

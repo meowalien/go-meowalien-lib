@@ -289,7 +289,6 @@ func (f fileSourceCode) RemoveImports() {
 		f.removeIndex(i)
 		i--
 	}
-	return
 }
 
 func (f fileSourceCode) removeIndex(i int) {

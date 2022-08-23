@@ -1,9 +1,11 @@
 package queue
 
-type Queue interface {
-	Push(SortableItem)
-	Pop() SortableItem
-	Peek() SortableItem
+import "golang.org/x/exp/constraints"
+
+type Queue[T constraints.Ordered] interface {
+	Push(T)
+	Pop() T
+	Peek() T
 	Len() int
 	Cap() int
 }

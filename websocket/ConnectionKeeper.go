@@ -12,7 +12,6 @@ import (
 
 	"github.com/gorilla/websocket"
 	"github.com/meowalien/go-meowalien-lib/errs"
-	"github.com/meowalien/go-meowalien-lib/uuid"
 )
 
 type ConnectionKeeper interface {
@@ -106,14 +105,14 @@ func DefaultOption() Option {
 
 type OptionModifier func(option *Option)
 
-func NewConnectionKeeper(optionModifier ...OptionModifier) (ck ConnectionKeeper) {
+func NewConnectionKeeper(uuid string, optionModifier ...OptionModifier) (ck ConnectionKeeper) {
 	option := DefaultOption()
 	for _, modifier := range optionModifier {
 		modifier(&option)
 	}
 
 	ck = &connectionKeeper{
-		uuid:   uuid.NewUUID("CK"),
+		uuid:   uuid,
 		Option: option,
 	}
 	return ck

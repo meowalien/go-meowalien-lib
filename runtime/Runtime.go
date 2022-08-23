@@ -2,17 +2,15 @@ package runtime
 
 import (
 	"fmt"
+	"github.com/meowalien/go-meowalien-lib/debug"
 	"path/filepath"
 	"runtime"
 	"strings"
 )
 
-// when AlwaysStackTrace is true, Caller() will always return CallerStackTrace() result
-var AlwaysStackTrace = false
-
 // 取得呼叫的文件與行號
 func Caller(skip int) string {
-	if AlwaysStackTrace {
+	if debug.DebugMode {
 		return CallerStackTrace(skip + 1)
 	}
 	_, file, line, ok := runtime.Caller(1 + skip)

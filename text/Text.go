@@ -2,7 +2,6 @@ package text
 
 import (
 	"fmt"
-	"strings"
 )
 
 const (
@@ -68,30 +67,7 @@ const (
 	BgHiWhite
 )
 
-// ColorSting Color the given string to the given color
-func ColorSting(s string, color ColorCode) string {
+// Color paint the given string to the given color
+func Color(s string, color ColorCode) string {
 	return fmt.Sprintf("\033[%dm%s\033[00m", color, s)
-}
-
-func IndexOfTimes(s string, target string, times int) int {
-	if times == 1 {
-		return strings.Index(s, target)
-	}
-	place := -1
-	for times > 0 {
-		find := strings.Index(s, target)
-		if find == -1 {
-			times--
-			break
-		} else if find+1 >= len(s) {
-			break
-		}
-		s = s[find+1:]
-		place += find + 1
-		times--
-	}
-	if times != 0 {
-		return -1
-	}
-	return place
 }
