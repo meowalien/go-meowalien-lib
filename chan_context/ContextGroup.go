@@ -27,7 +27,7 @@ func newContextGroup(name string, ctx WaitContext) ContextGroup {
 }
 
 type contextGroup struct {
-	wg     *sync.WaitGroup
+	wg     sync.WaitGroup
 	name   string
 	cancel context.CancelFunc
 	ctx    WaitContext
@@ -37,7 +37,7 @@ type contextGroup struct {
 }
 
 func (c *contextGroup) NewContext() (ctx WaitContext, cancel context.CancelFunc) {
-	return newWaitContext(c.ctx, c.wg)
+	return newWaitContext(c.ctx, &c.wg)
 }
 
 func (c *contextGroup) Child(name string) ContextGroup {
@@ -65,9 +65,9 @@ func (c *contextGroup) Close() {
 		fmt.Println("closed all child: ", c.name)
 	}
 	c.cancel()
-	if c.wg != nil {
-		c.wg.Wait()
-	}
+	//if c.wg != nil {
+	c.wg.Wait()
+	//}
 
 	fmt.Println("End Close: ", c.name)
 	fmt.Println("----------------------------------------------------")

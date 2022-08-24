@@ -36,6 +36,7 @@ func TestChanContext(t *testing.T) {
 					select {
 					case <-doneChan:
 						fmt.Printf("done_child_%d_%d\n", i, ii)
+						//time.Sleep(time.Second / 2)
 
 					case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
 						fmt.Printf("exec_child_%d_%d\n", i, ii)
@@ -61,6 +62,7 @@ func TestChanContext(t *testing.T) {
 			select {
 			case <-doneChan:
 				fmt.Println("done_root", i)
+				//time.Sleep(time.Second / 2)
 				//okFc()
 			case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
 				fmt.Println("exec_root", i)
