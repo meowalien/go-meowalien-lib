@@ -1,13 +1,14 @@
 package chan_context
 
 import (
+	"context"
 	"fmt"
 	"sync"
 )
 
 type ContextGroup interface {
 	Close()
-	NewContext() (Context, CancelFunc)
+	NewContext() (WaitContext, context.CancelFunc)
 	Child(name string) ContextGroup
 }
 
@@ -16,11 +17,11 @@ func RootContextGroup(name string) ContextGroup {
 	return cg
 }
 
-func newContextGroup(name string, ctx Context) ContextGroup {
+func newContextGroup(name string, ctx WaitContext) ContextGroup {
 	cg := &contextGroup{
 		name: name,
 	}
-	cg.ctx, cg.cancel = WithCancel(ctx, nil)
+	cg.ctx, cg.cancel = newWaitContext(ctx, nil)
 
 	return cg
 }
@@ -28,17 +29,15 @@ func newContextGroup(name string, ctx Context) ContextGroup {
 type contextGroup struct {
 	wg     *sync.WaitGroup
 	name   string
-	cancel CancelFunc
-	ctx    Context
+	cancel context.CancelFunc
+	ctx    WaitContext
 	child  []ContextGroup
 	lock   sync.Mutex
 	closed bool
 }
 
-func (c *contextGroup) NewContext() (ctx Context, cancel CancelFunc) {
-	ctx, cancel = WithCancel(c.ctx, c.wg)
-	//wctx = newWaitContext(ctx, c.wg)
-	return
+func (c *contextGroup) NewContext() (ctx WaitContext, cancel context.CancelFunc) {
+	return newWaitContext(c.ctx, c.wg)
 }
 
 func (c *contextGroup) Child(name string) ContextGroup {
