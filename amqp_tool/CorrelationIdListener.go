@@ -69,10 +69,6 @@ func (r *correlationIdListener) AddListener(key string, listener ListenerFunc) (
 		err = errs.New("the Listener on key %s is already exist", key)
 		return
 	}
-	//r.listenerMap.Range(func(key, value interface{}) bool {
-	//	fmt.Printf("AddListener - key:%s , val:%+v\n" , key , value)
-	//	return true
-	//})
 
 	return
 }
