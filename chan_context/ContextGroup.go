@@ -38,6 +38,7 @@ type contextGroup[T comparable] struct {
 func (c *contextGroup[T]) Key() T {
 	return c.name
 }
+
 func (c *contextGroup[T]) Context() (ctx WaitContext, cancel context.CancelFunc) {
 	return newWaitContext(c.ctx, &c.wg)
 }

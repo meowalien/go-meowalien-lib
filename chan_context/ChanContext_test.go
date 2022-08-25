@@ -34,7 +34,6 @@ func TestChanContext(t *testing.T) {
 	childCount := 200
 	childCtxCount := 200
 	delayRange := 2000
-	//gp := NewContextGroup("root")
 
 	for i := 0; i < level; i++ {
 		if i < childCount {
@@ -67,7 +66,7 @@ func TestChanContext(t *testing.T) {
 							fmt.Printf("done_%s_%d\n", Level2, ii)
 							okFc()
 						case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
-							//fmt.Printf("exec_%s_%d\n", Level1, ii)
+							fmt.Printf("exec_%s_%d\n", Level1, ii)
 						}
 						wg.Done()
 					}(ctx1, i, ii)
@@ -86,7 +85,7 @@ func TestChanContext(t *testing.T) {
 				fmt.Printf("done_%s_%d\n", LevelRoot, i)
 				okFc()
 			case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
-				//fmt.Printf("exec_%s_%d\n", LevelRoot, i)
+				fmt.Printf("exec_%s_%d\n", LevelRoot, i)
 			}
 			wg.Done()
 		}(ctx, i)
