@@ -2,7 +2,6 @@ package chan_context
 
 import (
 	"fmt"
-	//"github.com/meowalien/go-meowalien-lib/lock"
 	"math/rand"
 	"sync"
 	"testing"
@@ -48,7 +47,7 @@ func TestChanContext(t *testing.T) {
 							fmt.Printf("done_%s_%d\n", Level1, ii)
 							okFc()
 						case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
-							//fmt.Printf("exec_%s_%d\n", Level1, ii)
+							fmt.Printf("exec_%s_%d\n", Level1, ii)
 						}
 						wg.Done()
 					}(ctx, i, ii)
