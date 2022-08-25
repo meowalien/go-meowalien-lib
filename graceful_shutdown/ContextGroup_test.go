@@ -1,34 +1,19 @@
-package contexts
+package graceful_shutdown
 
 import (
 	"fmt"
 	"math/rand"
-	"sync"
 	"testing"
 	"time"
 )
 
-type GracefulShutdownLevel struct {
-	ContextGroup[uint8]
-	name string
-}
-
-func (g *GracefulShutdownLevel) String() string {
-	return g.name
-}
-
-func ChildLevel(g *GracefulShutdownLevel, name string) *GracefulShutdownLevel {
-	return &GracefulShutdownLevel{ContextGroup: g.Child(g.Key() + 1), name: name}
-}
-
 var (
-	LevelRoot = &GracefulShutdownLevel{ContextGroup: NewContextGroup(uint8(0)), name: "levelRoot"}
-	Level1    = ChildLevel(LevelRoot, "level1")
-	Level2    = ChildLevel(Level1, "level2")
+	LevelRoot = NewRootLevel("levelRoot")
+	Level1    = LevelRoot.NextLevel("AAA")
+	Level2    = Level1.NextLevel("BBB")
 )
 
 func TestChanContext(t *testing.T) {
-	wg := sync.WaitGroup{}
 	level := 20
 	childCount := 20
 	childCtxCount := 20
@@ -37,33 +22,30 @@ func TestChanContext(t *testing.T) {
 	for i := 0; i < level; i++ {
 		if i < childCount {
 			for ii := 0; ii < childCtxCount; ii++ {
-				wg.Add(1)
 				go func(i int, ii int) {
+					fmt.Printf("start_%s_%d_%d_%d\n", Level1, Level1.Level(), i, ii)
 					select {
 					case okFc := <-Level1.Done():
-						fmt.Printf("done_%s_%d\n", Level1, ii)
+						fmt.Printf("done_%s_%d_%d_%d\n", Level1, Level1.Level(), i, ii)
 						okFc()
 					case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
-						fmt.Printf("exec_%s_%d\n", Level1, ii)
+						fmt.Printf("exec_%s_%d_%d_%d\n", Level1, Level1.Level(), i, ii)
 					}
-					wg.Done()
 				}(i, ii)
 
-				wg.Add(1)
 				go func(i int, ii int) {
+					fmt.Printf("start_%s_%d_%d_%d\n", Level2, Level2.Level(), i, ii)
 					select {
 					case okFc := <-Level2.Done():
-						fmt.Printf("done_%s_%d\n", Level2, ii)
+						fmt.Printf("done_%s_%d_%d_%d\n", Level2, Level2.Level(), i, ii)
 						okFc()
 					case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
-						fmt.Printf("exec_%s_%d\n", Level2, ii)
+						fmt.Printf("exec_%s_%d_%d_%d\n", Level2, Level2.Level(), i, ii)
 					}
-					wg.Done()
 				}(i, ii)
+
 			}
 		}
-
-		wg.Add(1)
 
 		go func(i int) {
 			select {
@@ -73,15 +55,12 @@ func TestChanContext(t *testing.T) {
 			case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
 				fmt.Printf("exec_%s_%d\n", LevelRoot, i)
 			}
-			wg.Done()
 		}(i)
 	}
 
 	time.Sleep(time.Millisecond * time.Duration(rand.Intn(delayRange)))
 	fmt.Println("========================================================")
 	LevelRoot.Close()
-	//cancel()
 	fmt.Println("after cancel")
-	wg.Wait()
 
 }
