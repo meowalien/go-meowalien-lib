@@ -5,19 +5,19 @@ import (
 	"sync"
 )
 
-type ContextGroup interface {
+type GroupContext[T comparable] interface {
+	Key() T
 	Close()
-	NewContext() (WaitContext, context.CancelFunc)
-	Child(name string) ContextGroup
+	Context() (WaitContext, context.CancelFunc)
+	Child(name T) GroupContext[T]
 }
 
-func RootContextGroup(name string) ContextGroup {
-	cg := newContextGroup(name, nilCtx)
-	return cg
+func NewContextGroup[T comparable](name T) GroupContext[T] {
+	return newGroupContext(name, nilCtx)
 }
 
-func newContextGroup(name string, ctx WaitContext) ContextGroup {
-	cg := &contextGroup{
+func newGroupContext[T comparable](name T, ctx WaitContext) GroupContext[T] {
+	cg := &contextGroup[T]{
 		name: name,
 	}
 	cg.ctx, cg.cancel = newWaitContext(ctx, nil)
@@ -25,34 +25,37 @@ func newContextGroup(name string, ctx WaitContext) ContextGroup {
 	return cg
 }
 
-type contextGroup struct {
+type contextGroup[T comparable] struct {
 	wg     sync.WaitGroup
-	name   string
+	name   T
 	cancel context.CancelFunc
 	ctx    WaitContext
-	child  []ContextGroup
+	child  []GroupContext[T]
 	lock   sync.Mutex
 	closed bool
 }
 
-func (c *contextGroup) NewContext() (ctx WaitContext, cancel context.CancelFunc) {
+func (c *contextGroup[T]) Key() T {
+	return c.name
+}
+func (c *contextGroup[T]) Context() (ctx WaitContext, cancel context.CancelFunc) {
 	return newWaitContext(c.ctx, &c.wg)
 }
 
-func (c *contextGroup) Child(name string) ContextGroup {
+func (c *contextGroup[T]) Child(name T) GroupContext[T] {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	if c.closed {
 		panic("context group closed")
 	}
 
-	newGroup := newContextGroup(name, c.ctx)
+	newGroup := newGroupContext(name, c.ctx)
 
 	c.child = append(c.child, newGroup)
 	return newGroup
 }
 
-func (c *contextGroup) Close() {
+func (c *contextGroup[T]) Close() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	c.closed = true

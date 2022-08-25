@@ -1,40 +1,36 @@
 package chan_context
 
-import "time"
+import (
+	"time"
+)
 
 type emptyCtx int
 
-var nilCtx = new(emptyCtx)
-
-func (e *emptyCtx) Done() <-chan struct{} {
-	return nil
-}
-
-func (e *emptyCtx) DonePromise() (chFc <-chan func()) {
-	return nil
-}
-
-func (*emptyCtx) Deadline() (deadline time.Time, ok bool) {
+func (e emptyCtx) Deadline() (deadline time.Time, ok bool) {
 	return
 }
 
-func (*emptyCtx) doneStd() <-chan struct{} {
+func (e emptyCtx) Done() <-chan struct{} {
 	return nil
 }
 
-func (*emptyCtx) Err() error {
+func (e emptyCtx) Err() error {
 	return nil
 }
 
-func (*emptyCtx) Value(key any) any {
+func (e emptyCtx) Value(key any) any {
 	return nil
 }
 
+func (e emptyCtx) doneStd() (chFc <-chan struct{}) {
+	return nil
+}
+
+func (e emptyCtx) DonePromise() (chFc <-chan func()) {
+	return nil
+}
 func (e *emptyCtx) String() string {
-	switch e {
-	case nilCtx:
-		return "context.TODO"
-	default:
-		panic("unreachable")
-	}
+	return "emptyCtx"
 }
+
+var nilCtx = new(emptyCtx)

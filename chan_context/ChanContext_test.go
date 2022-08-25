@@ -2,10 +2,30 @@ package chan_context
 
 import (
 	"fmt"
+	//"github.com/meowalien/go-meowalien-lib/lock"
 	"math/rand"
 	"sync"
 	"testing"
 	"time"
+)
+
+type GracefulShutdownLevel struct {
+	GroupContext[uint8]
+	name string
+}
+
+func (g *GracefulShutdownLevel) String() string {
+	return g.name
+}
+
+func ChildLevel(g *GracefulShutdownLevel, name string) *GracefulShutdownLevel {
+	return &GracefulShutdownLevel{GroupContext: g.Child(g.Key() + 1), name: name}
+}
+
+var (
+	LevelRoot = &GracefulShutdownLevel{GroupContext: NewContextGroup(uint8(0)), name: "levelRoot"}
+	Level1    = ChildLevel(LevelRoot, "level1")
+	Level2    = ChildLevel(Level1, "level2")
 )
 
 func TestChanContext(t *testing.T) {
@@ -14,38 +34,59 @@ func TestChanContext(t *testing.T) {
 	childCount := 200
 	childCtxCount := 200
 	delayRange := 2000
-	gp := RootContextGroup("root")
+	//gp := NewContextGroup("root")
 
 	for i := 0; i < level; i++ {
 		if i < childCount {
-			gpChild := gp.Child(fmt.Sprintf("child_%d", i))
+			ctx, _ := Level1.Context()
+			wg.Add(1)
+			go func() {
+				for ii := 0; ii < childCtxCount; ii++ {
+					wg.Add(1)
+					go func(gp WaitContext, i int, ii int) {
+						select {
+						case okFc := <-ctx.DonePromise():
+							fmt.Printf("done_%s_%d\n", Level1, ii)
+							okFc()
+						case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
+							//fmt.Printf("exec_%s_%d\n", Level1, ii)
+						}
+						wg.Done()
+					}(ctx, i, ii)
+				}
+				wg.Done()
+			}()
+			ctx1, _ := Level2.Context()
+			wg.Add(1)
+			go func() {
+				for ii := 0; ii < childCtxCount; ii++ {
+					wg.Add(1)
+					go func(gp WaitContext, i int, ii int) {
+						select {
+						case okFc := <-ctx1.DonePromise():
+							fmt.Printf("done_%s_%d\n", Level2, ii)
+							okFc()
+						case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
+							//fmt.Printf("exec_%s_%d\n", Level1, ii)
+						}
+						wg.Done()
+					}(ctx1, i, ii)
+				}
+				wg.Done()
+			}()
 
-			ctx, _ := gpChild.NewContext()
-			for ii := 0; ii < childCtxCount; ii++ {
-				wg.Add(1)
-				go func(gp WaitContext, i int, ii int) {
-					select {
-					case okFc := <-ctx.DonePromise():
-						fmt.Printf("done_child_%d_%d\n", i, ii)
-						okFc()
-					case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
-						fmt.Printf("exec_child_%d_%d\n", i, ii)
-					}
-					wg.Done()
-				}(ctx, i, ii)
-			}
 		}
 
-		ctx, _ := gp.NewContext()
+		ctx, _ := LevelRoot.Context()
 		wg.Add(1)
 
 		go func(gp WaitContext, i int) {
 			select {
 			case okFc := <-ctx.DonePromise():
-				fmt.Println("done_root", i)
+				fmt.Printf("done_%s_%d\n", LevelRoot, i)
 				okFc()
 			case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
-				fmt.Println("exec_root", i)
+				//fmt.Printf("exec_%s_%d\n", LevelRoot, i)
 			}
 			wg.Done()
 		}(ctx, i)
@@ -53,7 +94,7 @@ func TestChanContext(t *testing.T) {
 
 	time.Sleep(time.Millisecond * time.Duration(rand.Intn(delayRange)))
 	fmt.Println("========================================================")
-	gp.Close()
+	LevelRoot.Close()
 	fmt.Println("after cancel")
 	wg.Wait()
 
