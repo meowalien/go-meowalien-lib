@@ -29,6 +29,7 @@ func TestChanContext(t *testing.T) {
 						fmt.Printf("done_child_%d_%d\n", i, ii)
 						okFc()
 					case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
+						fmt.Printf("exec_child_%d_%d\n", i, ii)
 					}
 					wg.Done()
 				}(ctx, i, ii)
@@ -44,6 +45,7 @@ func TestChanContext(t *testing.T) {
 				fmt.Println("done_root", i)
 				okFc()
 			case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
+				fmt.Println("exec_root", i)
 			}
 			wg.Done()
 		}(ctx, i)
