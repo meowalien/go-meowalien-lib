@@ -32,47 +32,37 @@ func TestChanContext(t *testing.T) {
 	level := 200
 	childCount := 200
 	childCtxCount := 200
-	delayRange := 2000
+	delayRange := 20000
 
 	for i := 0; i < level; i++ {
 		if i < childCount {
 			ctx, _ := Level1.Context()
-			wg.Add(1)
-			go func() {
-				for ii := 0; ii < childCtxCount; ii++ {
-					wg.Add(1)
-					go func(gp WaitContext, i int, ii int) {
-						select {
-						case okFc := <-ctx.DonePromise():
-							fmt.Printf("done_%s_%d\n", Level1, ii)
-							okFc()
-						case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
-							fmt.Printf("exec_%s_%d\n", Level1, ii)
-						}
-						wg.Done()
-					}(ctx, i, ii)
-				}
-				wg.Done()
-			}()
 			ctx1, _ := Level2.Context()
-			wg.Add(1)
-			go func() {
-				for ii := 0; ii < childCtxCount; ii++ {
-					wg.Add(1)
-					go func(gp WaitContext, i int, ii int) {
-						select {
-						case okFc := <-ctx1.DonePromise():
-							fmt.Printf("done_%s_%d\n", Level2, ii)
-							okFc()
-						case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
-							fmt.Printf("exec_%s_%d\n", Level1, ii)
-						}
-						wg.Done()
-					}(ctx1, i, ii)
-				}
-				wg.Done()
-			}()
+			for ii := 0; ii < childCtxCount; ii++ {
+				wg.Add(1)
+				go func(gp WaitContext, i int, ii int) {
+					select {
+					case okFc := <-ctx.DonePromise():
+						fmt.Printf("done_%s_%d\n", Level1, ii)
+						okFc()
+					case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
+						fmt.Printf("exec_%s_%d\n", Level1, ii)
+					}
+					wg.Done()
+				}(ctx, i, ii)
 
+				wg.Add(1)
+				go func(gp WaitContext, i int, ii int) {
+					select {
+					case okFc := <-ctx1.DonePromise():
+						fmt.Printf("done_%s_%d\n", Level2, ii)
+						okFc()
+					case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
+						fmt.Printf("exec_%s_%d\n", Level2, ii)
+					}
+					wg.Done()
+				}(ctx1, i, ii)
+			}
 		}
 
 		ctx, _ := LevelRoot.Context()
