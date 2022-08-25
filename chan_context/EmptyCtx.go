@@ -4,12 +4,14 @@ import "time"
 
 type emptyCtx int
 
+var nilCtx = new(emptyCtx)
+
 func (e *emptyCtx) Done() <-chan struct{} {
 	return nil
 }
 
-func (e *emptyCtx) DonePromise() (chFc <-chan struct{}, ok func()) {
-	return nil, ok
+func (e *emptyCtx) DonePromise() (chFc <-chan func()) {
+	return nil
 }
 
 func (*emptyCtx) Deadline() (deadline time.Time, ok bool) {
@@ -30,12 +32,9 @@ func (*emptyCtx) Value(key any) any {
 
 func (e *emptyCtx) String() string {
 	switch e {
-	//case background:
-	//	return "context.Background"
-	case todo:
+	case nilCtx:
 		return "context.TODO"
 	default:
 		panic("unreachable")
 	}
-	return "unknown empty Context"
 }

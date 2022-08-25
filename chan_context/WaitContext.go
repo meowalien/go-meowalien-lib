@@ -7,23 +7,31 @@ import (
 	"sync/atomic"
 )
 
+var closedchan = make(chan struct{})
+
+func init() {
+	close(closedchan)
+}
+
 type DoneStd interface {
 	doneStd() (chFc <-chan struct{})
 }
+
 type DonePromise interface {
-	DonePromise() (chFc <-chan struct{}, ok func())
+	DonePromise() (chFc <-chan func())
 }
+
 type WaitContext interface {
 	context.Context
 	DoneStd
 	DonePromise
 }
 
-var (
-	//background = new(emptyCtx)
-	todo = new(emptyCtx)
-)
-
+type canceler interface {
+	cancel(removeFromParent bool, err error)
+	DonePromise
+	DoneStd
+}
 type waitContext struct {
 	WaitContext
 	mu             sync.Mutex
@@ -55,23 +63,35 @@ func (c *waitContext) doneStd() <-chan struct{} {
 	return d.(chan struct{})
 }
 
-//var count int64
-
-func (c *waitContext) DonePromise() (chFc <-chan struct{}, ok func()) {
+func (c *waitContext) DonePromise() (chFc <-chan func()) {
+	nChFc := make(chan func())
+	chFc = nChFc
 	if c.childWaitGroup != nil {
 		c.childWaitGroup.Add(1)
 	}
-	chFc = c.doneStd()
-	ok = func() {
-		if c.childWaitGroup != nil {
-			c.childWaitGroup.Done()
+	ch := c.doneStd()
+
+	go func(ch <-chan struct{}) {
+		<-ch
+		select {
+		case nChFc <- func() {
+			if c.childWaitGroup != nil {
+				c.childWaitGroup.Done()
+			}
+		}:
+		default:
+			if c.childWaitGroup != nil {
+				c.childWaitGroup.Done()
+			}
 		}
-	}
+	}(ch)
 	return
 }
+
 func (c *waitContext) Done() (ch <-chan struct{}) {
-	ch, ok := c.DonePromise()
-	ok()
+	f := <-c.DonePromise()
+	ch = closedchan
+	f()
 	return
 }
 
@@ -125,8 +145,6 @@ func (c *waitContext) cancel(removeFromParent bool, err error) {
 	}
 }
 
-//type CancelFunc func()
-
 func newWaitContext(parent WaitContext, wg *sync.WaitGroup) (ctx WaitContext, cancel context.CancelFunc) {
 	if parent == nil {
 		panic("cannot create context from nil parent")
@@ -139,16 +157,16 @@ func newWaitContext(parent WaitContext, wg *sync.WaitGroup) (ctx WaitContext, ca
 var goroutines int32
 
 func propagateCancel(parent WaitContext, child canceler) {
-	done, okFc := parent.DonePromise()
+	done := parent.DonePromise()
 	if done == nil {
 		return // parent is never canceled
 	}
-	defer okFc()
 
 	select {
-	case <-done:
+	case okFc := <-done:
 		// parent is already canceled
 		child.cancel(false, parent.Err())
+		okFc()
 		return
 	default:
 	}
@@ -168,15 +186,17 @@ func propagateCancel(parent WaitContext, child canceler) {
 	} else {
 		atomic.AddInt32(&goroutines, +1)
 		go func() {
-			doneC, okFc := parent.DonePromise()
-			defer okFc()
-			doneC1, okFc1 := parent.DonePromise()
-			defer okFc1()
+			//doneC := parent.DonePromise()
+			//defer okFc()
+			//doneC1 := parent.DonePromise()
+			//defer okFc1()
 			select {
-			case <-doneC:
+			case okFc := <-parent.DonePromise():
 				child.cancel(false, parent.Err())
 				//defer doneOK()
-			case <-doneC1:
+				okFc()
+			case okFc1 := <-parent.DonePromise():
+				okFc1()
 				//defer doneOK()
 			}
 		}()
@@ -211,118 +231,4 @@ func removeChild(parent WaitContext, child canceler) {
 		delete(p.children, child)
 	}
 	p.mu.Unlock()
-}
-
-type canceler interface {
-	cancel(removeFromParent bool, err error)
-	DonePromise
-	DoneStd
-}
-
-var closedchan = make(chan struct{})
-
-func init() {
-	close(closedchan)
-}
-
-//type timerCtx struct {
-//	cancelCtx
-//	timer *time.Timer // Under cancelCtx.mu.
-//
-//	deadline time.Time
-//}
-//
-//func (c *timerCtx) Deadline() (deadline time.Time, ok bool) {
-//	return c.deadline, true
-//}
-//
-//func (c *timerCtx) String() string {
-//	return contextName(c.cancelCtx.WaitContext) + ".WithDeadline(" +
-//		c.deadline.String() + " [" +
-//		time.Until(c.deadline).String() + "])"
-//}
-//
-//func (c *timerCtx) cancel(removeFromParent bool, err error) {
-//	c.cancelCtx.cancel(false, err)
-//	if removeFromParent {
-//		// Remove this timerCtx from its parent cancelCtx's children.
-//		removeChild(c.cancelCtx.WaitContext, c)
-//	}
-//	c.mu.Lock()
-//	if c.timer != nil {
-//		c.timer.Stop()
-//		c.timer = nil
-//	}
-//	c.mu.Unlock()
-//}
-
-//func WithTimeout(parent Context, timeout time.Duration, wg *sync.WaitGroup) (Context, CancelFunc) {
-//	return WithDeadline(parent, time.Now().Add(timeout), wg)
-//}
-//
-//func WithValue(parent Context, key, val any) Context {
-//	if parent == nil {
-//		panic("cannot create context from nil parent")
-//	}
-//	if key == nil {
-//		panic("nil key")
-//	}
-//	if !reflect.TypeOf(key).Comparable() {
-//		panic("key is not comparable")
-//	}
-//	return &valueCtx{parent, key, val}
-//}
-
-type valueCtx struct {
-	WaitContext
-	key, val any
-}
-
-func stringify(v any) string {
-	switch s := v.(type) {
-	case stringer:
-		return s.String()
-	case string:
-		return s
-	}
-	return "<not Stringer>"
-}
-
-func (c *valueCtx) String() string {
-	return contextName(c.WaitContext) + ".WithValue(type " +
-		reflect.TypeOf(c.key).String() +
-		", val " + stringify(c.val) + ")"
-}
-
-func (c *valueCtx) Value(key any) any {
-	if c.key == key {
-		return c.val
-	}
-	return value(c.WaitContext, key)
-}
-
-func value(c WaitContext, key any) any {
-	for {
-		switch ctx := c.(type) {
-		case *valueCtx:
-			if key == ctx.key {
-				return ctx.val
-			}
-			c = ctx.WaitContext
-		case *waitContext:
-			if key == &cancelCtxKey {
-				return c
-			}
-			c = ctx.WaitContext
-		//case *timerCtx:
-		//	if key == &cancelCtxKey {
-		//		return &ctx.cancelCtx
-		//	}
-		//	c = ctx.WaitContext
-		//case *emptyCtx:
-		//	return nil
-		default:
-			return c.Value(key)
-		}
-	}
 }
