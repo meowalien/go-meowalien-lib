@@ -55,20 +55,12 @@ func (c *contextGroup) Child(name string) ContextGroup {
 func (c *contextGroup) Close() {
 	c.lock.Lock()
 	defer c.lock.Unlock()
-	//fmt.Println("Start Close: ", c.name)
 	c.closed = true
 	if c.child != nil {
 		for i := len(c.child) - 1; i >= 0; i-- {
 			c.child[i].Close()
 		}
-		//fmt.Println("closed all child: ", c.name)
 	}
 	c.cancel()
-	//if c.wg != nil {
 	c.wg.Wait()
-	//}
-
-	//fmt.Println("End Close: ", c.name)
-	//fmt.Println("----------------------------------------------------")
-	//time.Sleep(time.Second * 2)
 }

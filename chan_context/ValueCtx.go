@@ -43,13 +43,6 @@ func value(c WaitContext, key any) any {
 				return c
 			}
 			c = ctx.WaitContext
-		//case *timerCtx:
-		//	if key == &cancelCtxKey {
-		//		return &ctx.cancelCtx
-		//	}
-		//	c = ctx.WaitContext
-		//case *emptyCtx:
-		//	return nil
 		default:
 			return c.Value(key)
 		}

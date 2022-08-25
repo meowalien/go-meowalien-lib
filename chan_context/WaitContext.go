@@ -186,18 +186,12 @@ func propagateCancel(parent WaitContext, child canceler) {
 	} else {
 		atomic.AddInt32(&goroutines, +1)
 		go func() {
-			//doneC := parent.DonePromise()
-			//defer okFc()
-			//doneC1 := parent.DonePromise()
-			//defer okFc1()
 			select {
 			case okFc := <-parent.DonePromise():
 				child.cancel(false, parent.Err())
-				//defer doneOK()
 				okFc()
 			case okFc1 := <-parent.DonePromise():
 				okFc1()
-				//defer doneOK()
 			}
 		}()
 	}
