@@ -1,20 +1,23 @@
 package graceful_shutdown
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/meowalien/go-meowalien-lib/contexts"
+)
 
 type GracefulShutdownLevel interface {
-	Done() (chFc <-chan func())
+	PromiseDone() (chFc <-chan func())
 	Close()
 	fmt.Stringer
 	NextLevel(name string) *gracefulShutdownLevel
 }
 
 func NewRootLevel(name string) *gracefulShutdownLevel {
-	return &gracefulShutdownLevel{contextGroup: newContextGroup(nil), name: name}
+	return &gracefulShutdownLevel{ContextGroup: contexts.NewContextGroup(nil), name: name}
 }
 
 type gracefulShutdownLevel struct {
-	*contextGroup
+	contexts.ContextGroup
 	name  string
 	level uint
 }
@@ -28,5 +31,5 @@ func (g *gracefulShutdownLevel) Level() uint {
 }
 
 func (g *gracefulShutdownLevel) NextLevel(name string) *gracefulShutdownLevel {
-	return &gracefulShutdownLevel{contextGroup: g.childGroup(), name: name, level: g.level + 1}
+	return &gracefulShutdownLevel{ContextGroup: g.ChildGroup(), name: name, level: g.level + 1}
 }

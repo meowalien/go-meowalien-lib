@@ -14,18 +14,19 @@ var (
 )
 
 func TestChanContext(t *testing.T) {
-	level := 20
-	childCount := 20
-	childCtxCount := 20
-	delayRange := 2000
+	magnification := 10 * 1
+	level := 2 * magnification
+	childCount := 2 * magnification
+	childCtxCount := 2 * magnification
+	delayRange := 200 * magnification
 
 	for i := 0; i < level; i++ {
 		if i < childCount {
 			for ii := 0; ii < childCtxCount; ii++ {
 				go func(i int, ii int) {
-					fmt.Printf("start_%s_%d_%d_%d\n", Level1, Level1.Level(), i, ii)
+					//fmt.Printf("start_%s_%d_%d_%d\n", Level1, Level1.Level(), i, ii)
 					select {
-					case okFc := <-Level1.Done():
+					case okFc := <-Level1.PromiseDone():
 						fmt.Printf("done_%s_%d_%d_%d\n", Level1, Level1.Level(), i, ii)
 						okFc()
 					case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
@@ -34,9 +35,9 @@ func TestChanContext(t *testing.T) {
 				}(i, ii)
 
 				go func(i int, ii int) {
-					fmt.Printf("start_%s_%d_%d_%d\n", Level2, Level2.Level(), i, ii)
+					//fmt.Printf("start_%s_%d_%d_%d\n", Level2, Level2.Level(), i, ii)
 					select {
-					case okFc := <-Level2.Done():
+					case okFc := <-Level2.PromiseDone():
 						fmt.Printf("done_%s_%d_%d_%d\n", Level2, Level2.Level(), i, ii)
 						okFc()
 					case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):
@@ -49,7 +50,7 @@ func TestChanContext(t *testing.T) {
 
 		go func(i int) {
 			select {
-			case okFc := <-LevelRoot.Done():
+			case okFc := <-LevelRoot.PromiseDone():
 				fmt.Printf("done_%s_%d\n", LevelRoot, i)
 				okFc()
 			case <-time.After(time.Millisecond * time.Duration(rand.Intn(delayRange))):

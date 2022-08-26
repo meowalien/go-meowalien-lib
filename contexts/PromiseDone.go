@@ -1,14 +1,49 @@
-package graceful_shutdown
+package contexts
 
 import (
 	"context"
+	"fmt"
 	"github.com/meowalien/go-meowalien-lib/slice"
 	"sync"
 	"sync/atomic"
 )
 
-// Make a new PromiseContext with the given name and WaitGroup wg,
-// the wg could be nil, if so, the context will act as context.Context
+type PromiseContext interface {
+	/*
+		PromiseDone will return a channel and add 1 to the WaitGroup which was given when creating,
+		the channel will receive a function "okFc" when the PromiseContext's cancel function is called,
+		okFc will done 1 to the WaitGroup.
+
+		Note that the PromiseDone's return channel will receive okFc in reverse order of the
+		PromiseDone was called.
+
+		Note that the okFc should be called when the select case is done,
+		otherwise the WaitGroup's Wait() will never return.
+
+		e.g.:
+		ctx, cancel := NewPromiseDone(nil, &sync.WaitGroup{})
+		select {
+		case okFc := <-ctx.PromiseDone():
+			// do something
+			okFc() // okFc should be called when the select case is done
+		}
+	*/
+	PromiseDone() <-chan func()
+	fmt.Stringer
+}
+
+func NewPromiseContext(parent PromiseContext, wg *sync.WaitGroup) (ctx PromiseContext, cancel context.CancelFunc) {
+	if parent == nil {
+		return newPromiseDone(nil, wg)
+	}
+	switch pp := parent.(type) {
+	case *promiseDone:
+		return newPromiseDone(pp, wg)
+	default:
+		panic(fmt.Sprintf("context: internal error: unknown parent type%T", parent))
+	}
+}
+
 func newPromiseDone(parent *promiseDone, wg *sync.WaitGroup) (ctx *promiseDone, cancel context.CancelFunc) {
 	c := promiseDone{promiseDone: parent, childWaitGroup: wg}
 	propagateCancel(parent, &c)
@@ -21,8 +56,6 @@ func init() {
 	close(closedchan)
 }
 
-// PromiseContext will add 1 to the WaitGroup when the Done Called,
-// and minus 1 when the Done returned function called.
 type promiseDone struct {
 	*promiseDone
 	mu             sync.Mutex
@@ -47,7 +80,7 @@ func (c *promiseDone) done() <-chan struct{} {
 	return d.(chan struct{})
 }
 
-func (c *promiseDone) Done() (chFc <-chan func()) {
+func (c *promiseDone) PromiseDone() (chFc <-chan func()) {
 	nChFc := make(chan func())
 	chFc = nChFc
 	if c.childWaitGroup != nil {
@@ -125,7 +158,7 @@ func propagateCancel(parent *promiseDone, child *promiseDone) {
 	if parent == nil {
 		return
 	}
-	done := parent.Done()
+	done := parent.PromiseDone()
 
 	select {
 	case okFc := <-done:
@@ -153,10 +186,10 @@ func propagateCancel(parent *promiseDone, child *promiseDone) {
 		atomic.AddInt32(&goroutines, +1)
 		go func() {
 			select {
-			case okFc := <-parent.Done():
+			case okFc := <-parent.PromiseDone():
 				child.cancel(false, parent.Err())
 				okFc()
-			case okFc1 := <-parent.Done():
+			case okFc1 := <-parent.PromiseDone():
 				okFc1()
 			}
 		}()

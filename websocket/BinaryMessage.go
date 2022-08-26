@@ -3,6 +3,7 @@ package websocket
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/meowalien/go-meowalien-lib/errs"
 	"io"
 	"io/ioutil"
 )
@@ -24,7 +25,7 @@ func (m *binaryMessage) Binary() ([]byte, error) {
 	}
 	msgBytes, err := ioutil.ReadAll(m)
 	if err != nil {
-		return nil, err
+		return nil, errs.New(err)
 	}
 
 	m.binaryCatch = msgBytes
@@ -36,11 +37,11 @@ func (m *binaryMessage) Binary() ([]byte, error) {
 func (m binaryMessage) UnmarshalJson(a interface{}) error {
 	bin, err := m.Binary()
 	if err != nil {
-		return err
+		return errs.New(err)
 	}
 	err = json.Unmarshal(bin, a)
 	if err != nil {
-		return err
+		return errs.New(err)
 	}
 	return nil
 }
