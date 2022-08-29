@@ -23,6 +23,9 @@ type gracefulShutdownLevel struct {
 }
 
 func (g *gracefulShutdownLevel) String() string {
+	if g.name == "" {
+		return fmt.Sprintf("Level%d", g.level)
+	}
 	return g.name
 }
 

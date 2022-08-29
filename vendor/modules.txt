@@ -72,6 +72,7 @@ github.com/jmoiron/sqlx/reflectx
 # github.com/klauspost/compress v1.13.6
 ## explicit; go 1.15
 github.com/klauspost/compress
+github.com/klauspost/compress/flate
 github.com/klauspost/compress/fse
 github.com/klauspost/compress/huff0
 github.com/klauspost/compress/internal/snapref
@@ -235,3 +236,10 @@ gorm.io/gorm/logger
 gorm.io/gorm/migrator
 gorm.io/gorm/schema
 gorm.io/gorm/utils
+# nhooyr.io/websocket v1.8.7
+## explicit; go 1.13
+nhooyr.io/websocket
+nhooyr.io/websocket/internal/bpool
+nhooyr.io/websocket/internal/errd
+nhooyr.io/websocket/internal/wsjs
+nhooyr.io/websocket/internal/xsync

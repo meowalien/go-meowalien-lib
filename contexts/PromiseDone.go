@@ -29,7 +29,6 @@ type PromiseContext interface {
 		}
 	*/
 	PromiseDone() <-chan func()
-	fmt.Stringer
 }
 
 func NewPromiseContext(parent PromiseContext, wg *sync.WaitGroup) (ctx PromiseContext, cancel context.CancelFunc) {
