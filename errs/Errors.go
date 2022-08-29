@@ -11,6 +11,6 @@ New Usage:
 	New(error1 , error2/string , error3/string ...) => wrap error1(error2(error3 ...)))
 	New(error) make a withLineError of error
 */
-var New = func(err any, obj ...any) *withLineError {
+var New = func(err any, obj ...any) error {
 	return newWithLineErrorFromAny(true, err, runtime.Caller(1), obj...)
 }
