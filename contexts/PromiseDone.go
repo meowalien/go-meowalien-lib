@@ -6,6 +6,7 @@ import (
 	"github.com/meowalien/go-meowalien-lib/slice"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 type PromiseContext interface {
@@ -29,6 +30,7 @@ type PromiseContext interface {
 		}
 	*/
 	PromiseDone() <-chan func()
+	context.Context
 }
 
 func NewPromiseContext(parent PromiseContext, wg *sync.WaitGroup) (ctx PromiseContext, cancel context.CancelFunc) {
@@ -64,7 +66,15 @@ type promiseDone struct {
 	childWaitGroup *sync.WaitGroup
 }
 
-func (c *promiseDone) done() <-chan struct{} {
+func (c *promiseDone) Deadline() (deadline time.Time, ok bool) {
+	return time.Time{}, false
+}
+
+func (c *promiseDone) Value(key any) any {
+	return nil
+}
+
+func (c *promiseDone) Done() <-chan struct{} {
 	d := c.doneVal.Load()
 	if d != nil {
 		return d.(chan struct{})
@@ -85,7 +95,7 @@ func (c *promiseDone) PromiseDone() (chFc <-chan func()) {
 	if c.childWaitGroup != nil {
 		c.childWaitGroup.Add(1)
 	}
-	ch := c.done()
+	ch := c.Done()
 
 	go func(ch <-chan struct{}) {
 		<-ch
@@ -199,7 +209,7 @@ func parentCancelCtx(parent *promiseDone) (*promiseDone, bool) {
 	if parent == nil {
 		return nil, false
 	}
-	done := parent.done()
+	done := parent.Done()
 	if done == closedchan || done == nil {
 		return nil, false
 	}

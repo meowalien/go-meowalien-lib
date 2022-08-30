@@ -15,23 +15,28 @@ type ContextGroup interface {
 	ChildGroup() ContextGroup
 }
 
+// ctx could be nil
 func NewContextGroup(ctx PromiseContext) ContextGroup {
+	ctxGp, ok := ctx.(*contextGroup)
+	if ok {
+		return ctxGp.ChildGroup()
+	}
 	cg := &contextGroup{}
-	cg.ctx, cg.cancel = NewPromiseContext(ctx, &sync.WaitGroup{})
+	cg.PromiseContext, cg.cancel = NewPromiseContext(ctx, &sync.WaitGroup{})
 	return cg
 }
 
 type contextGroup struct {
 	wg     sync.WaitGroup
 	cancel context.CancelFunc
-	ctx    PromiseContext
+	PromiseContext
 	child  []ContextGroup
 	lock   sync.Mutex
 	closed bool
 }
 
 func (c *contextGroup) PromiseDone() (chFc <-chan func()) {
-	ctx, _ := NewPromiseContext(c.ctx, &c.wg)
+	ctx, _ := NewPromiseContext(c.PromiseContext, &c.wg)
 	return ctx.PromiseDone()
 }
 
@@ -42,7 +47,7 @@ func (c *contextGroup) ChildGroup() ContextGroup {
 		panic("context group closed")
 	}
 
-	newGroup := NewContextGroup(c.ctx)
+	newGroup := NewContextGroup(c.PromiseContext)
 
 	c.child = append(c.child, newGroup)
 	return newGroup
