@@ -2,46 +2,52 @@ package websocket
 
 import (
 	"bytes"
-	"encoding/json"
-	"github.com/meowalien/go-meowalien-lib/errs"
-	"io"
-	"io/ioutil"
+	"context"
+	"fmt"
 )
+
+func NewBinaryMessage(sender MessageSender, data []byte) BinaryMessage {
+	return &binaryMessage{
+		msgSender: sender,
+		sender:    donothingSender,
+		data:      data,
+		Reader:    bytes.NewReader(data),
+	}
+}
 
 type BinaryMessage interface {
 	Message
-	Binary() ([]byte, error)
-	UnmarshalJson(a interface{}) error
 }
 
 type binaryMessage struct {
-	io.Reader
-	binaryCatch []byte
+	data []byte
+	*bytes.Reader
+	sender    Sender
+	msgSender MessageSender
 }
 
-func (m *binaryMessage) Binary() ([]byte, error) {
-	if m.binaryCatch != nil {
-		return m.binaryCatch, nil
-	}
-	msgBytes, err := ioutil.ReadAll(m)
-	if err != nil {
-		return nil, errs.New(err)
-	}
+func (b *binaryMessage) ReplyText(ctx context.Context, text string) (err error) {
+	return b.msgSender.SendMessage(ctx, NewTextMessage(b.msgSender, text))
 
-	m.binaryCatch = msgBytes
-	m.Reader = bytes.NewReader(msgBytes)
-
-	return msgBytes, nil
 }
 
-func (m binaryMessage) UnmarshalJson(a interface{}) error {
-	bin, err := m.Binary()
-	if err != nil {
-		return errs.New(err)
-	}
-	err = json.Unmarshal(bin, a)
-	if err != nil {
-		return errs.New(err)
-	}
-	return nil
+func (b *binaryMessage) ReplyBinary(ctx context.Context, text string) (err error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (b *binaryMessage) String() string {
+	return fmt.Sprint(b.data)
+}
+
+func (b *binaryMessage) Type() MessageType {
+	return MessageTypeBinary
+}
+
+func (b *binaryMessage) Data() []byte {
+	return b.data
+}
+
+func (b *binaryMessage) Sender() Sender {
+	return b.sender
 }

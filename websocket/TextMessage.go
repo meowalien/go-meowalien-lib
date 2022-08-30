@@ -1,31 +1,19 @@
 package websocket
 
-import (
-	"bytes"
-	"github.com/meowalien/go-meowalien-lib/errs"
-	"log"
-)
-
-func NewTextMessage(text string) TextMessage {
-	return &textMessage{&binaryMessage{
-		Reader: bytes.NewReader([]byte(text)),
-	}}
+func NewTextMessage(sender MessageSender, data string) TextMessage {
+	return &textMessage{
+		BinaryMessage: NewBinaryMessage(sender, []byte(data)),
+	}
 }
 
 type TextMessage interface {
-	BinaryMessage
-	Text() string
+	Message
 }
 
 type textMessage struct {
 	BinaryMessage
 }
 
-func (t textMessage) Text() string {
-	bs, err := t.Binary()
-	if err != nil {
-		log.Println(errs.New(err))
-		return ""
-	}
-	return string(bs)
+func (t *textMessage) String() string {
+	return string(t.Data())
 }
