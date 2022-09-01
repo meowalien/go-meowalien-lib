@@ -29,19 +29,11 @@ type syncMap[K comparable, T any] struct {
 	misses          int
 }
 
-// readOnly is an immutable struct stored atomically in the Map.read field.
 type readOnlyFlowMap[K comparable, T any] struct {
 	m       map[K]*entryFlowMap[T]
 	amended bool // true if the dirty map contains some key not in m.
 }
 
-// expunged is an arbitrary pointer that marks entries which have been deleted
-// from the dirty map.
-//var expungedFlowMap = unsafe.Pointer(new(T))
-
-// Load returns the value stored in the map for a key, or nil if no
-// value is present.
-// The ok result indicates whether value was found in the map.
 func (m *syncMap[K, T]) Load(key K) (value T, ok bool) {
 	read, _ := m.read.Load().(readOnlyFlowMap[K, T])
 	e, ok := read.m[key]
@@ -67,7 +59,6 @@ func (m *syncMap[K, T]) Load(key K) (value T, ok bool) {
 	return e.load()
 }
 
-// Store sets the value for a key.
 func (m *syncMap[K, T]) Store(key K, value T) {
 	read, _ := m.read.Load().(readOnlyFlowMap[K, T])
 	if e, ok := read.m[key]; ok && e.tryStore(&value) {
@@ -97,9 +88,6 @@ func (m *syncMap[K, T]) Store(key K, value T) {
 	m.mu.Unlock()
 }
 
-// LoadOrStore returns the existing value for the key if present.
-// Otherwise, it stores and returns the given value.
-// The loaded result is true if the value was loaded, false if stored.
 func (m *syncMap[K, T]) LoadOrStore(key K, value T) (actual T, loaded bool) {
 	// Avoid locking if it's a clean hit.
 	read, _ := m.read.Load().(readOnlyFlowMap[K, T])
@@ -135,8 +123,6 @@ func (m *syncMap[K, T]) LoadOrStore(key K, value T) (actual T, loaded bool) {
 	return actual, loaded
 }
 
-// LoadAndDelete deletes the value for a key, returning the previous value if any.
-// The loaded result reports whether the key was present.
 func (m *syncMap[K, T]) LoadAndDelete(key K) (value T, loaded bool) {
 	read, _ := m.read.Load().(readOnlyFlowMap[K, T])
 	e, ok := read.m[key]
@@ -160,21 +146,10 @@ func (m *syncMap[K, T]) LoadAndDelete(key K) (value T, loaded bool) {
 	return value, false
 }
 
-// Delete deletes the value for a key.
 func (m *syncMap[K, T]) Delete(key K) {
 	m.LoadAndDelete(key)
 }
 
-// Range calls f sequentially for each key and value present in the map.
-// If f returns false, range stops the iteration.
-//
-// Range does not necessarily correspond to any consistent snapshot of the Map's
-// contents: no key will be visited more than once, but if the value for any key
-// is stored or deleted concurrently, Range may reflect any mapping for that key
-// from any point during the Range call.
-//
-// Range may be O(N) with the number of elements in the map even if f returns
-// false after a constant number of calls.
 func (m *syncMap[K, T]) Range(f func(key K, value T) bool) {
 	// We need to be able to iterate over all of the keys that were already
 	// present at the start of the call to Range.

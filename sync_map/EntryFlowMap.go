@@ -9,16 +9,11 @@ func newEntryFlowMap[T any](i T, expungedFlowMap unsafe.Pointer) *entryFlowMap[T
 	return &entryFlowMap[T]{p: unsafe.Pointer(&i), expungedFlowMap: expungedFlowMap}
 }
 
-// An entry is a slot in the map corresponding to a particular key.
 type entryFlowMap[T any] struct {
 	expungedFlowMap unsafe.Pointer
 	p               unsafe.Pointer // *interface{}
 }
 
-// tryStore stores a value if the entry has not been expunged.
-//
-// If the entry is expunged, tryStore returns false and leaves the entry
-// unchanged.
 func (e *entryFlowMap[T]) tryStore(i *T) bool {
 	for {
 		p := atomic.LoadPointer(&e.p)
@@ -31,26 +26,14 @@ func (e *entryFlowMap[T]) tryStore(i *T) bool {
 	}
 }
 
-// unexpungeLocked ensures that the entry is not marked as expunged.
-//
-// If the entry was previously expunged, it must be added to the dirty map
-// before m.mu is unlocked.
 func (e *entryFlowMap[T]) unexpungeLocked() (wasExpunged bool) {
 	return atomic.CompareAndSwapPointer(&e.p, e.expungedFlowMap, nil)
 }
 
-// storeLocked unconditionally stores a value to the entry.
-//
-// The entry must be known not to be expunged.
 func (e *entryFlowMap[T]) storeLocked(i *T) {
 	atomic.StorePointer(&e.p, unsafe.Pointer(i))
 }
 
-// tryLoadOrStore atomically loads or stores a value if the entry is not
-// expunged.
-//
-// If the entry is expunged, tryLoadOrStore leaves the entry unchanged and
-// returns with ok==false.
 func (e *entryFlowMap[T]) tryLoadOrStore(i T) (actual T, loaded, ok bool) {
 	p := atomic.LoadPointer(&e.p)
 	if p == e.expungedFlowMap {
