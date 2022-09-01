@@ -1,7 +1,6 @@
-package websocket
+package websockets
 
 import (
-	"context"
 	"fmt"
 	"io"
 )
@@ -11,8 +10,6 @@ type Message interface {
 	fmt.Stringer
 	Type() MessageType
 	Data() []byte
-	ReplyText(ctx context.Context, text string) (err error)
-	ReplyBinary(ctx context.Context, text string) (err error)
 	Sender() Sender
 }
 type Sender struct {
@@ -45,15 +42,4 @@ func (t MessageType) Valid() bool {
 		return false
 	}
 	return true
-}
-
-func NewMessage(sender MessageSender, msgtype MessageType, data []byte) (message Message) {
-	switch msgtype {
-	case MessageTypeBinary:
-		return NewBinaryMessage(sender, data)
-	case MessageTypeText:
-		return NewTextMessage(sender, string(data))
-	default:
-		panic("unknown message type")
-	}
 }

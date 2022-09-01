@@ -2,6 +2,7 @@ package contexts
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 )
@@ -36,4 +37,21 @@ func TestPromiseContext(t *testing.T) {
 
 	time.Sleep(time.Second * 1)
 	cancel()
+}
+
+func TestWithValue(t *testing.T) {
+	readPumpCtx := NewContextGroup(nil)
+	val := context.WithValue(readPumpCtx, "key1", "value1")
+	val = context.WithValue(val, "key2", "value2")
+	x := val.Value("key2")
+	fmt.Println(x)
+}
+
+func TestWithTimeout(t *testing.T) {
+	readPumpCtx := NewContextGroup(nil)
+	val, _ := context.WithTimeout(readPumpCtx, time.Hour*200)
+	val, _ = context.WithTimeout(val, time.Hour*200)
+	d, x := val.Deadline()
+	fmt.Println(d)
+	fmt.Println(x)
 }

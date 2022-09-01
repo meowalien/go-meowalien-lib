@@ -1,4 +1,4 @@
-package synchronize_limiter
+package thread
 
 import (
 	"context"
@@ -10,7 +10,7 @@ type Stop interface {
 	Stop(ctx context.Context)
 }
 
-type Limiter interface {
+type SynchronizeLimiter interface {
 	Do(ctx context.Context, f func()) (err error)
 	Stop
 }
@@ -30,7 +30,7 @@ type Config struct {
 
 var DropMission = errors.New("drop")
 
-func NewLimiter(cf Config) Limiter {
+func NewSynchronizeLimiter(cf Config) SynchronizeLimiter {
 	if cf.Ctx == nil {
 		cf.Ctx = context.TODO()
 	}

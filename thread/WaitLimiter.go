@@ -1,4 +1,4 @@
-package synchronize_limiter
+package thread
 
 import (
 	"context"

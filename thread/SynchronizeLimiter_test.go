@@ -1,4 +1,4 @@
-package synchronize_limiter
+package thread
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 func TestLimiter(t *testing.T) {
 	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	//defer cancel()
-	limiter := NewLimiter(Config{
+	limiter := NewSynchronizeLimiter(Config{
 		QueueFullStrategy:  Strategy_Wait,
 		WaitingQueueLimit:  1024,
 		RunningThreadLimit: 1,

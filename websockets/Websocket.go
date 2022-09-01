@@ -1,4 +1,4 @@
-package websocket
+package websockets
 
 import (
 	"context"
@@ -14,27 +14,47 @@ import (
 /*
 https://www.rfc-editor.org/rfc/rfc6455
 */
-
-type ConnectionKeeper interface {
-	MessageSender
-	Start()
-	Close() error
-}
-type MessageSender interface {
-	SendMessage(ctx context.Context, message Message) (err error)
-}
-type Allocator func(ctx context.Context, msg Message)
-type OnErrorCallback func(keeper ConnectionKeeper, err error)
-type WebsocketReader func(ctx context.Context) (msgType MessageType, data []byte, err error)
-type WebsocketWriter func(ctx context.Context, typ MessageType, p []byte) (err error)
-
 type ConnectionAdapter struct {
 	OnError         OnErrorCallback
-	Dispatch        Allocator
-	WebsocketReader WebsocketReader
-	WebsocketWriter WebsocketWriter
+	Dispatcher      Dispatcher
+	WebsocketReader Reader
+	WebsocketWriter Writer
 	Close           func() error
 }
+type ConnectionKeeper interface {
+	Start()
+	Close() error
+	SendMessage(ctx context.Context, message Message) error
+}
+
+func NewConnectionKeeper(cnn ConnectionAdapter, configs ...Config) (keeper ConnectionKeeper) {
+	conf := defaultConfig()
+	for c := range configs {
+		configs[c](&conf)
+	}
+	onece := sync.Once{}
+	// to prevent second call of Close()
+	cnn.Close = func() (err error) {
+		onece.Do(func() {
+			err = cnn.Close()
+		})
+		return
+	}
+	return &connectionKeeper{
+		pingInterval:     conf.pingInterval,
+		rootContextGroup: contexts.NewContextGroup(nil),
+		readTimeout:      conf.readTimeout,
+		incomeQueue:      make(chan Message, conf.incomeBufferSize),
+		outputQueue:      make(chan Message, conf.outputBufferSize),
+		cnn:              cnn,
+	}
+}
+
+type MessageSender func(ctx context.Context, message Message) (err error)
+type Dispatcher func(ctx context.Context, msg Message)
+type OnErrorCallback func(keeper ConnectionKeeper, err error)
+type Reader func(ctx context.Context) (msgType MessageType, data []byte, err error)
+type Writer func(ctx context.Context, typ MessageType, p []byte) (err error)
 
 const (
 	DefaultIncomeBufferSize = 100
@@ -62,28 +82,6 @@ type config struct {
 	readTimeout      time.Duration
 	incomeBufferSize int
 	outputBufferSize int
-}
-
-func NewConnectionKeeper(cnn ConnectionAdapter, configs ...Config) (keeper ConnectionKeeper) {
-	conf := defaultConfig()
-	for c := range configs {
-		configs[c](&conf)
-	}
-	onece := sync.Once{}
-	cnn.Close = func() (err error) {
-		onece.Do(func() {
-			err = cnn.Close()
-		})
-		return
-	}
-	return &connectionKeeper{
-		pingInterval:     conf.pingInterval,
-		rootContextGroup: contexts.NewContextGroup(nil),
-		readTimeout:      conf.readTimeout,
-		incomeQueue:      make(chan Message, conf.incomeBufferSize),
-		outputQueue:      make(chan Message, conf.outputBufferSize),
-		cnn:              cnn,
-	}
 }
 
 type connectionKeeper struct {
@@ -152,7 +150,15 @@ loop:
 				c.cnn.OnError(c, errs.New("error when reading:%w , data:%v , message type: %v", err, data, msgtype))
 				return
 			}
-			message := NewMessage(c, msgtype, data)
+			var message Message
+			switch msgtype {
+			case MessageTypeBinary:
+				message = NewBinaryMessage(data)
+			case MessageTypeText:
+				message = NewTextMessage(string(data))
+			default:
+				panic("unknown message type")
+			}
 			fmt.Println("new message:", message)
 			timer.Reset(c.readTimeout)
 			select {
@@ -216,7 +222,7 @@ func (c *connectionKeeper) dispatchPump(ctx contexts.ContextGroup) {
 			for {
 				select {
 				case message := <-c.incomeQueue:
-					c.cnn.Dispatch(ctx, message)
+					c.cnn.Dispatcher(ctx, message)
 				default:
 					break lp
 				}
@@ -224,7 +230,7 @@ func (c *connectionKeeper) dispatchPump(ctx contexts.ContextGroup) {
 			ok()
 			return
 		case message := <-c.incomeQueue:
-			c.cnn.Dispatch(ctx, message)
+			c.cnn.Dispatcher(ctx, message)
 		}
 	}
 }

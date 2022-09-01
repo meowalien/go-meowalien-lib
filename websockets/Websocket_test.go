@@ -1,4 +1,4 @@
-package websocket
+package websockets
 
 import (
 	"context"
@@ -30,7 +30,7 @@ func TestWebsocket(t *testing.T) {
 		OnError: func(keeper ConnectionKeeper, err error) {
 			fmt.Println("OnError: ", err)
 		},
-		Dispatch: func(ctx context.Context, msg Message) {
+		Dispatcher: func(ctx context.Context, msg Message) {
 			fmt.Println("Dispatch: ", msg)
 		},
 		WebsocketReader: func(ctx context.Context) (msgType MessageType, data []byte, err error) {
@@ -104,7 +104,7 @@ func newAdapter(conn *websocket.Conn) ConnectionAdapter {
 		OnError: func(keeper ConnectionKeeper, err error) {
 			fmt.Println("OnError-server: ", err)
 		},
-		Dispatch: func(ctx context.Context, msg Message) {
+		Dispatcher: func(ctx context.Context, msg Message) {
 			fmt.Println("Dispatch-server: ", msg)
 			err := msg.ReplyText(ctx, "hello-server")
 			//err := keeper.SendMessage(ctx, NewTextMessage(keeper, "hello-server"))
@@ -139,5 +139,4 @@ func TestClosedFcChan(t *testing.T) {
 	close(c)
 	a := <-c
 	a()
-	//fmt.Println("a: ", )
 }
