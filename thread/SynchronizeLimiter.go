@@ -4,15 +4,21 @@ import (
 	"context"
 	"errors"
 	"github.com/meowalien/go-meowalien-lib/errs"
+	"sync"
 )
 
 type Stop interface {
 	Stop(ctx context.Context)
 }
 
+type Wait interface {
+	WaitQueueClean()
+}
+
 type SynchronizeLimiter interface {
-	Do(ctx context.Context, f func()) (err error)
+	Do(ctx context.Context, f ...func()) (err error)
 	Stop
+	Wait
 }
 
 type Strategy int
@@ -42,6 +48,7 @@ func NewSynchronizeLimiter(cf Config) SynchronizeLimiter {
 	case Strategy_Wait:
 		ctx, cancel := context.WithCancel(cf.Ctx)
 		l := &waitLimiter{
+			cond:             sync.Cond{L: &sync.Mutex{}},
 			stopChan:         make(chan struct{}),
 			cancel:           cancel,
 			ctx:              ctx,
