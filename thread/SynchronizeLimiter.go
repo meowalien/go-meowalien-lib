@@ -7,46 +7,20 @@ import (
 	"sync"
 )
 
-type Stop interface {
-	Stop(ctx context.Context)
-}
-
-type Wait interface {
-	WaitQueueClean()
-}
-
 type SynchronizeLimiter interface {
 	Do(ctx context.Context, f ...func()) (err error)
 	Stop
 	Wait
 }
 
-type Strategy int
-
-const (
-	Strategy_Wait = iota // default
-)
-
-type Config struct {
-	QueueFullStrategy  Strategy
-	WaitingQueueLimit  int
-	RunningThreadLimit int
-	Ctx                context.Context
-}
-
-var DropMission = errors.New("drop")
-
 func NewSynchronizeLimiter(cf Config) SynchronizeLimiter {
-	if cf.Ctx == nil {
-		cf.Ctx = context.TODO()
-	}
 	if cf.RunningThreadLimit < 1 {
 		panic("running thread limit is less than 1")
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
 	switch cf.QueueFullStrategy {
 	case Strategy_Wait:
-		ctx, cancel := context.WithCancel(cf.Ctx)
 		l := &waitLimiter{
 			cond:             sync.Cond{L: &sync.Mutex{}},
 			stopChan:         make(chan struct{}),
@@ -61,3 +35,25 @@ func NewSynchronizeLimiter(cf Config) SynchronizeLimiter {
 		panic(errs.New("unsupported queue full strategy: %v", cf.QueueFullStrategy))
 	}
 }
+
+type Stop interface {
+	Stop(ctx context.Context)
+}
+
+type Wait interface {
+	WaitQueueClean()
+}
+
+type Strategy int
+
+const (
+	Strategy_Wait = iota // default
+)
+
+type Config struct {
+	QueueFullStrategy  Strategy
+	WaitingQueueLimit  int
+	RunningThreadLimit int
+}
+
+var DropMission = errors.New("drop")

@@ -74,45 +74,37 @@ func TestLiniter(t *testing.T) {
 		WaitingQueueLimit:  1024,
 		RunningThreadLimit: 10,
 	})
-
+	x := 0
 	err := limiter.Do(context.TODO(), func() {
-		fmt.Println("AAAAAAAAAAAAAAAAAAA: ")
-		time.Sleep(time.Second * 2)
-		fmt.Println("AAAAAAAAAAAAAAAAAAA-afterwait: ")
-	}, func() {
-		fmt.Println("BBBBBBBBBBBBBBBBBBBB: ")
+		x = 19
 		time.Sleep(time.Second)
-		fmt.Println("BBBBBBBBBBBBBBBBBBBB-afterwait: ")
-
 	}, func() {
-		fmt.Println("CCCCCCCCCCCCCCCCCCCC: ")
-		time.Sleep(time.Second / 2)
-		fmt.Println("CCCCCCCCCCCCCCCCCCCC-afterwait: ")
-
+		x = 20
 	})
 	if err != nil {
 		panic(err)
 	}
-	err = limiter.Do(context.TODO(), func() {
-		fmt.Println("ADAADDADADADADADADADAD: ")
-		time.Sleep(time.Second * 2)
-		fmt.Println("ADAADDADADADADADADADAD-afterwait: ")
-	}, func() {
-		fmt.Println("BVBVBVBVBVBVBVBVBVBVBVB: ")
-		time.Sleep(time.Second)
-		fmt.Println("BVBVBVBVBVBVBVBVBVBVBVB-afterwait: ")
-
-	}, func() {
-		fmt.Println("CXCXCXCXCXCXCXCXCXCXc: ")
-		time.Sleep(time.Second / 2)
-		fmt.Println("CXCXCXCXCXCXCXCXCXCXc-afterwait: ")
-
-	})
-	if err != nil {
-		panic(err)
-	}
+	//err = limiter.Do(context.TODO(), func() {
+	//	fmt.Println("ADAADDADADADADADADADAD: ")
+	//	time.Sleep(time.Second * 2)
+	//	fmt.Println("ADAADDADADADADADADADAD-afterwait: ")
+	//}, func() {
+	//	fmt.Println("BVBVBVBVBVBVBVBVBVBVBVB: ")
+	//	time.Sleep(time.Second)
+	//	fmt.Println("BVBVBVBVBVBVBVBVBVBVBVB-afterwait: ")
+	//
+	//}, func() {
+	//	fmt.Println("CXCXCXCXCXCXCXCXCXCXc: ")
+	//	time.Sleep(time.Second / 2)
+	//	fmt.Println("CXCXCXCXCXCXCXCXCXCXc-afterwait: ")
+	//
+	//})
+	//if err != nil {
+	//	panic(err)
+	//}
 	//time.Sleep(time.Second * 1)
 	//limiter.Stop(context.TODO())
 	limiter.WaitQueueClean()
+	fmt.Println(x)
 	fmt.Println(err)
 }

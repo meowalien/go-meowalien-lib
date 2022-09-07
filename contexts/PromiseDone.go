@@ -10,6 +10,8 @@ import (
 )
 
 type PromiseContext interface {
+	context.Context
+
 	/*
 		PromiseDone will return a channel and add 1 to the WaitGroup which was given when creating,
 		the channel will receive a function "okFc" when the PromiseContext's cancel function is called,
@@ -29,8 +31,12 @@ type PromiseContext interface {
 			okFc() // okFc should be called when the select case is done
 		}
 	*/
-	PromiseDone() <-chan func()
-	context.Context
+	PromiseDone() (ok <-chan func())
+	/*
+		OnDone will call the function f when the PromiseDone()'s return
+		channel receive ok function, and call ok function after f is done.
+	*/
+	OnDone(f func())
 }
 
 func NewPromiseContext(parent PromiseContext, wg *sync.WaitGroup) (ctx PromiseContext, cancel context.CancelFunc) {
@@ -64,6 +70,14 @@ type promiseDone struct {
 	children       []*promiseDone //map[*promiseDone]struct{}
 	err            error
 	childWaitGroup *sync.WaitGroup
+}
+
+func (c *promiseDone) OnDone(f func()) {
+	go func(f func()) {
+		ok := <-c.PromiseDone()
+		f()
+		ok()
+	}(f)
 }
 
 func (c *promiseDone) Deadline() (deadline time.Time, ok bool) {
