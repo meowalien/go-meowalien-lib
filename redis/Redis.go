@@ -41,12 +41,17 @@ type ConnectionConfig struct {
 	IdleCheckFrequency time.Duration `json:"idle_check_frequency,omitempty"`
 	TLSConfig          *tls.Config   `json:"tls_config,omitempty"`
 	PingSettings       *PingSettings `json:"ping_settings,omitempty"`
-	OnError            func(error)   `json:"-"`
+	OnPingError        func(error)   `json:"-"`
 }
 
-func CreateRedisConnection(ctx context.Context, config ConnectionConfig) (client redis.Cmdable, err error) { //nolint:gocritic
-	if config.OnError == nil {
-		config.OnError = func(err error) {
+type Client interface {
+	redis.Cmdable
+	AddHook(hook redis.Hook)
+}
+
+func NewClient(ctx context.Context, config ConnectionConfig) (client Client, err error) { //nolint:gocritic
+	if config.OnPingError == nil {
+		config.OnPingError = func(err error) {
 			log.Println(err.Error())
 		}
 	}
@@ -112,7 +117,7 @@ func CreateRedisConnection(ctx context.Context, config ConnectionConfig) (client
 	}
 
 	if config.PingSettings != nil {
-		go pingLoop(ctx, client, *config.PingSettings, config.OnError)
+		go pingLoop(ctx, client, *config.PingSettings, config.OnPingError)
 	}
 
 	return

@@ -15,11 +15,11 @@ import (
 	"time"
 )
 
-type _HTTP_PROTOCOL string
+type HTTP_PROTOCOL string
 
 const (
-	HTTP_1_1_PROTOCOL _HTTP_PROTOCOL = "1.1"
-	HTTP_2_0_PROTOCOL _HTTP_PROTOCOL = "2.0"
+	HTTP_1_1_PROTOCOL HTTP_PROTOCOL = "1.1"
+	HTTP_2_0_PROTOCOL HTTP_PROTOCOL = "2.0"
 )
 
 type ArangoDBConnectionConfig struct {
@@ -27,7 +27,7 @@ type ArangoDBConnectionConfig struct {
 	Address          []string
 	UserName         string
 	Password         string
-	HTTPProtocol     _HTTP_PROTOCOL
+	HTTPProtocol     HTTP_PROTOCOL
 	ConnectionLimit  int
 	DefaultDoTimeout time.Duration
 	// json 0, velocypack 1
