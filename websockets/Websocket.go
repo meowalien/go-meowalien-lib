@@ -52,7 +52,7 @@ func NewConnectionKeeper(cnn ConnectionAdapter, configs ...Config) (keeper Conne
 
 type MessageSender func(ctx context.Context, message Message) (err error)
 type Dispatcher func(ctx context.Context, msg Message)
-type OnErrorCallback func(keeper ConnectionKeeper, err error)
+type OnErrorCallback func(err error)
 type Reader func(ctx context.Context) (msgType MessageType, data []byte, err error)
 type Writer func(ctx context.Context, typ MessageType, p []byte) (err error)
 
@@ -142,12 +142,12 @@ loop:
 					err = c.Close()
 					if err != nil {
 						err = errs.New(err)
-						c.cnn.OnError(c, err)
+						c.cnn.OnError(err)
 						return
 					}
 					return
 				}
-				c.cnn.OnError(c, errs.New("error when reading:%w , data:%v , message type: %v", err, data, msgtype))
+				c.cnn.OnError(errs.New("error when reading:%w , data:%v , message type: %v", err, data, msgtype))
 				return
 			}
 			var message Message
@@ -175,7 +175,7 @@ loop:
 				}
 				continue
 			case <-timer.C:
-				c.cnn.OnError(c, errs.New("%w, dropping message: %v", ErrIncomeQueueFull, message))
+				c.cnn.OnError(errs.New("%w, dropping message: %v", ErrIncomeQueueFull, message))
 				continue
 			}
 		}
