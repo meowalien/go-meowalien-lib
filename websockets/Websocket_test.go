@@ -27,7 +27,7 @@ func TestWebsocket(t *testing.T) {
 	fmt.Println("resp: ", resp)
 
 	keeper := NewConnectionKeeper(ConnectionAdapter{
-		OnError: func(keeper ConnectionKeeper, err error) {
+		OnError: func(keeper WebsocketMessageQueuer, err error) {
 			fmt.Println("OnError: ", err)
 		},
 		Dispatcher: func(ctx context.Context, msg Message) {
@@ -70,7 +70,7 @@ func TestWebsocket(t *testing.T) {
 	fmt.Println("client done")
 }
 
-func startClient(wg *sync.WaitGroup, keeper ConnectionKeeper) {
+func startClient(wg *sync.WaitGroup, keeper WebsocketMessageQueuer) {
 	time.Sleep(time.Second * 1)
 	defer wg.Done()
 
@@ -101,7 +101,7 @@ func startServer(wg *sync.WaitGroup) {
 
 func newAdapter(conn *websocket.Conn) ConnectionAdapter {
 	return ConnectionAdapter{
-		OnError: func(keeper ConnectionKeeper, err error) {
+		OnError: func(keeper WebsocketMessageQueuer, err error) {
 			fmt.Println("OnError-server: ", err)
 		},
 		Dispatcher: func(ctx context.Context, msg Message) {

@@ -14,6 +14,7 @@ import (
 /*
 https://www.rfc-editor.org/rfc/rfc6455
 */
+
 type ConnectionAdapter struct {
 	OnError         OnErrorCallback
 	Dispatcher      Dispatcher
@@ -21,13 +22,15 @@ type ConnectionAdapter struct {
 	WebsocketWriter Writer
 	Close           func() error
 }
-type ConnectionKeeper interface {
+type WebsocketMessageQueuer interface {
 	Start()
 	Close() error
+	CloseReader() error
+	CloseWriter() error
 	SendMessage(ctx context.Context, message Message) error
 }
 
-func NewConnectionKeeper(cnn ConnectionAdapter, configs ...Config) (keeper ConnectionKeeper) {
+func NewConnectionKeeper(cnn ConnectionAdapter, configs ...Config) (keeper WebsocketMessageQueuer) {
 	conf := defaultConfig()
 	for c := range configs {
 		configs[c](&conf)
@@ -91,6 +94,19 @@ type connectionKeeper struct {
 	readTimeout      time.Duration
 	pingInterval     time.Duration
 	rootContextGroup contexts.ContextGroup
+	dispatchPumpCtx  contexts.ContextGroup
+	writePumpCtx     contexts.ContextGroup
+	readPumpCtx      contexts.ContextGroup
+}
+
+func (c *connectionKeeper) CloseReader() (err error) {
+	c.readPumpCtx.Close()
+	return
+}
+
+func (c *connectionKeeper) CloseWriter() (err error) {
+	c.readPumpCtx.Close()
+	return
 }
 
 func (c *connectionKeeper) Close() error {
@@ -113,13 +129,13 @@ func (c *connectionKeeper) SendMessage(ctx context.Context, message Message) (er
 
 func (c *connectionKeeper) Start() {
 	// to make sure the readPumpCtx will be done before the writePumpCtx
-	writePumpCtx := contexts.NewContextGroup(c.rootContextGroup)
-	dispatchPumpCtx := writePumpCtx.ChildGroup()
-	readPumpCtx := dispatchPumpCtx.ChildGroup()
+	c.writePumpCtx = contexts.NewContextGroup(c.rootContextGroup)
+	c.dispatchPumpCtx = c.writePumpCtx.ChildGroup()
+	c.readPumpCtx = c.dispatchPumpCtx.ChildGroup()
 
-	go c.writePump(writePumpCtx)       // close 3st
-	go c.dispatchPump(dispatchPumpCtx) // close 2st
-	go c.readPump(readPumpCtx)         // close 1st
+	go c.writePump(c.writePumpCtx)       // close 3st
+	go c.dispatchPump(c.dispatchPumpCtx) // close 2st
+	go c.readPump(c.readPumpCtx)         // close 1st
 	<-c.rootContextGroup.Done()
 }
 
@@ -133,6 +149,7 @@ loop:
 	for {
 		select {
 		case <-ctx.Done():
+			fmt.Println("readPump done")
 			// break when the context is done, but the dispatchPump is still running, it will drain the queue
 			return
 		default:
@@ -193,7 +210,7 @@ func (c *connectionKeeper) writePump(ctx contexts.PromiseContext) {
 				case message := <-c.outputQueue:
 					err := c.cnn.WebsocketWriter(ctx, message.Type(), message.Data())
 					if err != nil {
-						message.Sender().OnSendError(c, errs.New(err))
+						c.cnn.OnError(errs.New("error when writing:%w , data:%v , message type: %v", err, message.Data(), message.Type()))
 						continue
 					}
 				default:
@@ -201,12 +218,13 @@ func (c *connectionKeeper) writePump(ctx contexts.PromiseContext) {
 				}
 			}
 			ok()
+			fmt.Println("writePump done")
 			return
 		case message := <-c.outputQueue:
 			fmt.Println("c.outputQueue: ", len(c.outputQueue))
 			err := c.cnn.WebsocketWriter(ctx, message.Type(), message.Data())
 			if err != nil {
-				message.Sender().OnSendError(c, errs.New(err))
+				c.cnn.OnError(errs.New("error when writing:%w , data:%v , message type: %v", err, message.Data(), message.Type()))
 				continue
 			}
 		}
@@ -228,6 +246,7 @@ func (c *connectionKeeper) dispatchPump(ctx contexts.ContextGroup) {
 				}
 			}
 			ok()
+			fmt.Println("dispatchPump done")
 			return
 		case message := <-c.incomeQueue:
 			c.cnn.Dispatcher(ctx, message)

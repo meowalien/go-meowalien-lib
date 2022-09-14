@@ -47,6 +47,7 @@ type ConnectionConfig struct {
 type Client interface {
 	redis.Cmdable
 	AddHook(hook redis.Hook)
+	Close() error
 }
 
 func NewClient(ctx context.Context, config ConnectionConfig) (client Client, err error) { //nolint:gocritic

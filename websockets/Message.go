@@ -10,14 +10,6 @@ type Message interface {
 	fmt.Stringer
 	Type() MessageType
 	Data() []byte
-	Sender() Sender
-}
-type Sender struct {
-	OnSendError func(c ConnectionKeeper, err error)
-}
-
-var donothingSender = Sender{
-	OnSendError: func(c ConnectionKeeper, err error) {},
 }
 
 type MessageType int
