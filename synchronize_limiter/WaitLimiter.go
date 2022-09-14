@@ -3,6 +3,7 @@ package synchronize_limiter
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/meowalien/go-meowalien-lib/errs"
 	"sync"
 )
@@ -39,6 +40,9 @@ func (s *waitLimiter) Do(ctx context.Context, f func()) (err error) {
 		}
 		return
 	case s.waitingTaskQueue <- f:
+		return
+	default:
+		fmt.Println("queue full, drop mission")
 		return
 	}
 }
