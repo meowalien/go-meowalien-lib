@@ -12,10 +12,10 @@ type SynchronizeLimiter interface {
 }
 
 func NewSynchronizeLimiter(cf Config) SynchronizeLimiter {
-	if cf.RunningThreadLimit < 1 {
+	if cf.RunningThreadAmount < 1 {
 		panic("running thread limit is less than 1")
 	}
-	if cf.WaitingQueueLimit < 1 {
+	if cf.WaitingQueueCapacity < 1 {
 		panic("waiting queue limit is less than 1")
 	}
 	switch cf.QueueFullStrategy {
@@ -45,9 +45,9 @@ const (
 )
 
 type Config struct {
-	QueueFullStrategy  Strategy
-	WaitingQueueLimit  int
-	RunningThreadLimit int
+	QueueFullStrategy    Strategy
+	WaitingQueueCapacity int
+	RunningThreadAmount  int
 }
 
 //var DropMission = errors.New("drop")

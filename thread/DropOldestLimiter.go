@@ -16,8 +16,8 @@ func newDropOldLimiter(cf Config) *dropOldestLimiter {
 		stopChan:         make(chan struct{}),
 		cancel:           cancel,
 		ctx:              ctx,
-		waitingTaskQueue: make(chan func(), cf.WaitingQueueLimit),
-		threadCount:      cf.RunningThreadLimit,
+		waitingTaskQueue: make(chan func(), cf.WaitingQueueCapacity),
+		threadCount:      cf.RunningThreadAmount,
 	}
 	d.startConsumer()
 	return d

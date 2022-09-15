@@ -12,9 +12,9 @@ func TestLimiter(t *testing.T) {
 	//ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
 	//defer cancel()
 	limiter := NewSynchronizeLimiter(Config{
-		QueueFullStrategy:  Strategy_Wait,
-		WaitingQueueLimit:  1024,
-		RunningThreadLimit: 1,
+		QueueFullStrategy:    Strategy_Wait,
+		WaitingQueueCapacity: 1024,
+		RunningThreadAmount:  1,
 	})
 	//wg := sync.WaitGroup{}
 	//wg.Add(1)
@@ -70,9 +70,9 @@ func TestLimiter(t *testing.T) {
 
 func TestLiniter(t *testing.T) {
 	limiter := NewSynchronizeLimiter(Config{
-		QueueFullStrategy:  Strategy_Wait,
-		WaitingQueueLimit:  1024,
-		RunningThreadLimit: 10,
+		QueueFullStrategy:    Strategy_Wait,
+		WaitingQueueCapacity: 1024,
+		RunningThreadAmount:  10,
 	})
 	x := 0
 	err := limiter.Do(context.TODO(), func() {

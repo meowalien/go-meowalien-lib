@@ -15,8 +15,8 @@ func newWaitLimiter(cf Config) *waitLimiter {
 		stopChan:         make(chan struct{}),
 		cancel:           cancel,
 		ctx:              ctx,
-		waitingTaskQueue: make(chan func(), cf.WaitingQueueLimit),
-		threadCount:      cf.RunningThreadLimit,
+		waitingTaskQueue: make(chan func(), cf.WaitingQueueCapacity),
+		threadCount:      cf.RunningThreadAmount,
 	}
 	l.startConsumer()
 	return l
