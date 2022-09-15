@@ -8,9 +8,10 @@ import (
 	"sync/atomic"
 )
 
-func newWaitLimiter(cf Config) *waitLimiter {
+func newDropOldLimiter(cf Config) *dropOldestLimiter {
 	ctx, cancel := context.WithCancel(context.Background())
-	l := &waitLimiter{
+
+	d := &dropOldestLimiter{
 		cond:             sync.Cond{L: &sync.Mutex{}},
 		stopChan:         make(chan struct{}),
 		cancel:           cancel,
@@ -18,22 +19,23 @@ func newWaitLimiter(cf Config) *waitLimiter {
 		waitingTaskQueue: make(chan func(), cf.WaitingQueueLimit),
 		threadCount:      cf.RunningThreadLimit,
 	}
-	l.startConsumer()
-	return l
+	d.startConsumer()
+	return d
 }
 
-type waitLimiter struct {
+type dropOldestLimiter struct {
 	waitThread          sync.WaitGroup
-	waitingTaskQueue    chan func()
-	stopChan            chan struct{}
 	threadCount         int
-	ctx                 context.Context
-	cancel              context.CancelFunc
+	stopChan            chan struct{}
+	waitingTaskQueue    chan func()
 	cond                sync.Cond
+	cancel              context.CancelFunc
+	ctx                 context.Context
 	sequentialTaskCount uint64
+	doLock              sync.Mutex
 }
 
-func (s *waitLimiter) WaitQueueClean() {
+func (s *dropOldestLimiter) WaitQueueClean() {
 	s.cond.L.Lock()
 	for len(s.waitingTaskQueue) != 0 || s.sequentialTaskCount != 0 {
 		s.cond.Wait()
@@ -41,14 +43,28 @@ func (s *waitLimiter) WaitQueueClean() {
 	s.cond.L.Unlock()
 }
 
-func (s *waitLimiter) Stop(ctx context.Context) {
+func (s *dropOldestLimiter) Stop(ctx context.Context) {
 	s.cancel()
 	s.WaitQueueClean()
 	close(s.stopChan)
 	s.waitThread.Wait() // wait for all thread closed
 }
+func (s *dropOldestLimiter) Do(ctx context.Context, ff ...func()) (err error) {
+	// to prevent multiple goroutine call Do() at the same time,
+	// so that the s.waitingTaskQueue will only be written by one goroutine
+	s.doLock.Lock()
+	defer s.doLock.Unlock()
+	if len(ff) == 1 {
+		return s.do(ctx, ff[0])
+	}
+	atomic.AddUint64(&s.sequentialTaskCount, uint64(len(ff)))
+	f := s.makeFunc(ctx, ff, 0)
+	err = s.do(ctx, f)
+	return
+}
 
-func (s *waitLimiter) do(ctx context.Context, f func()) (err error) {
+func (s *dropOldestLimiter) do(ctx context.Context, f func()) (err error) {
+begin:
 	select {
 	case <-s.ctx.Done():
 		err = errs.New("limiter stopping")
@@ -62,19 +78,34 @@ func (s *waitLimiter) do(ctx context.Context, f func()) (err error) {
 		return
 	case s.waitingTaskQueue <- f:
 		return
+	default:
+		// to prevent the other goroutine from testing len(s.waitingTaskQueue)==0
+		// before the f is written into s.waitingTaskQueue
+		s.cond.L.Lock()
+		defer s.cond.L.Unlock()
+
+		select {
+		case <-s.ctx.Done():
+			err = errs.New("limiter stopping")
+			return
+		case <-ctx.Done():
+			if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				err = errs.New("timeout")
+			} else {
+				err = errs.New("limiter context done: ", ctx.Err())
+			}
+			return
+		case <-s.waitingTaskQueue:
+			//	consume oldest
+		default:
+			//	nothing to consume
+		}
+
+		goto begin
 	}
-}
-func (s *waitLimiter) Do(ctx context.Context, ff ...func()) (err error) {
-	if len(ff) == 1 {
-		return s.do(ctx, ff[0])
-	}
-	atomic.AddUint64(&s.sequentialTaskCount, uint64(len(ff)))
-	f := s.makeFunc(ctx, ff, 0)
-	err = s.do(ctx, f)
-	return
 }
 
-func (s *waitLimiter) makeFunc(ctx context.Context, ff []func(), i int) func() {
+func (s *dropOldestLimiter) makeFunc(ctx context.Context, ff []func(), i int) func() {
 	return func() {
 		defer atomic.AddUint64(&s.sequentialTaskCount, ^uint64(0))
 		ff[i]()
@@ -83,7 +114,7 @@ func (s *waitLimiter) makeFunc(ctx context.Context, ff []func(), i int) func() {
 		}
 	}
 }
-func (s *waitLimiter) startConsumer() {
+func (s *dropOldestLimiter) startConsumer() {
 	s.waitThread.Add(s.threadCount)
 	for i := 0; i < s.threadCount; i++ {
 		go func(i int) {
