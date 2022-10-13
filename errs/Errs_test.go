@@ -94,8 +94,12 @@ func TestWithLine_nil_parent_case(t *testing.T) {
 }
 
 func TestWithLine_defer(t *testing.T) {
-	err3 := testFunc()
-	fmt.Println(err3)
+	err := testFunc()
+	if err != nil {
+		err = New(err)
+		return
+	}
+	fmt.Println(err)
 	//assert.EqualError(t, err3, "errs/Errs_test.go:97: { \n\terrs/Errs_test.go:99: Error 1\n\t=> errs/Errs_test.go:96: Error 2 \n}")
 
 }
@@ -132,4 +136,36 @@ func TestErrorAndNil(t *testing.T) {
 	err3 := New(err1, err2)
 	fmt.Println(err3)
 	//assert.EqualError(t, err3, "errs/Errs_test.go:105: Error 1")
+}
+
+// error from std pkg
+func F1() error {
+	return errors.New("Error 1")
+}
+
+func F2() (err error) {
+	err = F1()
+	if err != nil {
+		err = New(err)
+		return
+	}
+	return
+}
+
+func F3() (err error) {
+	err = F2()
+	if err != nil {
+		err = New(err)
+		return
+	}
+	return
+}
+
+func TestFF(t *testing.T) {
+	err := F3()
+	if err != nil {
+		err = New(err)
+		fmt.Println(err)
+		return
+	}
 }

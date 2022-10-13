@@ -29,7 +29,6 @@ func (w *withLineError) Error() (s string) {
 	} else {
 		return w.parent.formatChild(s)
 	}
-
 }
 
 func (w *withLineError) wrap(a any, caller string) (res *withLineError) {
@@ -63,11 +62,14 @@ func (w withLineError) deliver(caller string) *withLineError {
 }
 
 func newWithLineErrorFromAny(deliver bool, err any, caller string, obj ...any) *withLineError {
-	if err == nil {
+	if err == nil || err == (*withLineError)(nil) {
 		if len(obj) == 0 {
 			return nil
+		} else if len(obj) == 1 {
+			return newWithLineErrorFromAny(deliver, obj[0], caller)
+		} else {
+			return newWithLineErrorFromAny(deliver, obj[0], caller, obj[1:]...)
 		}
-		return newWithLineErrorFromAny(deliver, obj[0], caller, obj[1:]...)
 	}
 	switch errTp := err.(type) {
 	case string:
