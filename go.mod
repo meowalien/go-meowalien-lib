@@ -23,10 +23,12 @@ require (
 	golang.org/x/net v0.0.0-20211112202133-69e39bad7dc2
 	gorm.io/driver/mysql v1.3.2
 	gorm.io/gorm v1.23.3
+	lukechampine.com/frand v1.4.2
 	nhooyr.io/websocket v1.8.7
 )
 
 require (
+	github.com/aead/chacha20 v0.0.0-20180709150244-8b13a72661da // indirect
 	github.com/arangodb/go-velocypack v0.0.0-20200318135517-5af53c29c67e // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
