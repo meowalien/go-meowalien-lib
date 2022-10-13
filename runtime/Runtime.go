@@ -2,23 +2,33 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/meowalien/go-meowalien-lib/debug"
 	"path/filepath"
 	"runtime"
 	"strings"
 )
 
+type formatSetting int
+
+const (
+	CALLER_FORMAT_SHORT formatSetting = iota
+	CALLER_FORMAT_LONG
+)
+
 // 取得呼叫的文件與行號
-func Caller(skip int) string {
-	if debug.DebugMode {
-		return CallerStackTrace(skip + 1)
-	}
+func Caller(skip int, formatSet formatSetting) string {
 	_, file, line, ok := runtime.Caller(1 + skip)
 	if !ok {
 		return "[fail to get caller]"
 	}
-
-	return fmt.Sprintf("%s/%s:%d", filepath.Base(filepath.Dir(file)), filepath.Base(file), line)
+	switch formatSet {
+	case CALLER_FORMAT_SHORT:
+		dir, f := filepath.Split(file)
+		return fmt.Sprintf("%s/%s:%d", filepath.Base(dir), f, line)
+	case CALLER_FORMAT_LONG:
+		return fmt.Sprintf("%s:%d", file, line)
+	default:
+		panic("unknown formatSetting")
+	}
 }
 
 func CallerStackTrace(skip int) (ans string) {

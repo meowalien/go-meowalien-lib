@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"fmt"
-	"github.com/meowalien/go-meowalien-lib/debug"
 	"testing"
 )
 
@@ -11,12 +10,16 @@ func TestCallerFileAndLine(t *testing.T) {
 	fmt.Println(s)
 }
 func TestCaller(t *testing.T) {
-	s := Caller(0)
+	s := Caller(0, CALLER_FORMAT_SHORT)
 	fmt.Println(s)
 }
 
-func TestCallerWhenAwaysStackTrace(t *testing.T) {
-	debug.DebugMode = true
-	s := Caller(0)
+func TestShort(t *testing.T) {
+	s := Caller(0, CALLER_FORMAT_SHORT)
+	fmt.Println(s)
+}
+
+func TestLong(t *testing.T) {
+	s := Caller(0, CALLER_FORMAT_LONG)
 	fmt.Println(s)
 }
