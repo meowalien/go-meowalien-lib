@@ -34,6 +34,6 @@ func (b *binaryMessage) Type() MessageType {
 	return MessageTypeBinary
 }
 
-func (b *binaryMessage) Data() []byte {
+func (b *binaryMessage) Bytes() []byte {
 	return b.data
 }

@@ -9,7 +9,7 @@ type Message interface {
 	io.Reader
 	fmt.Stringer
 	Type() MessageType
-	Data() []byte
+	Bytes() []byte
 }
 
 type MessageType int

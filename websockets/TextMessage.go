@@ -15,7 +15,7 @@ type textMessage struct {
 }
 
 func (t *textMessage) String() string {
-	return string(t.Data())
+	return string(t.Bytes())
 }
 
 func (t *textMessage) Type() MessageType {

@@ -155,7 +155,7 @@ loop:
 		default:
 			msgtype, data, err := c.cnn.WebsocketReader(ctx)
 			if err != nil {
-				if errors.Is(err, io.EOF) {
+				if errors.Is(err, io.EOF) || errors.Is(err, context.Canceled) {
 					err = c.Close()
 					if err != nil {
 						err = errs.New(err)
@@ -176,7 +176,6 @@ loop:
 			default:
 				panic("unknown message type")
 			}
-			fmt.Println("new message:", message)
 			timer.Reset(c.readTimeout)
 			select {
 			case ok := <-ctx.PromiseDone():
@@ -208,9 +207,9 @@ func (c *connectionKeeper) writePump(ctx contexts.PromiseContext) {
 			for {
 				select {
 				case message := <-c.outputQueue:
-					err := c.cnn.WebsocketWriter(ctx, message.Type(), message.Data())
+					err := c.cnn.WebsocketWriter(ctx, message.Type(), message.Bytes())
 					if err != nil {
-						c.cnn.OnError(errs.New("error when writing:%w , data:%v , message type: %v", err, message.Data(), message.Type()))
+						c.cnn.OnError(errs.New("error when writing:%w , data:%v , message type: %v", err, message.Bytes(), message.Type()))
 						continue
 					}
 				default:
@@ -221,10 +220,10 @@ func (c *connectionKeeper) writePump(ctx contexts.PromiseContext) {
 			fmt.Println("writePump done")
 			return
 		case message := <-c.outputQueue:
-			fmt.Println("c.outputQueue: ", len(c.outputQueue))
-			err := c.cnn.WebsocketWriter(ctx, message.Type(), message.Data())
+			//fmt.Println("c.outputQueue: ", len(c.outputQueue))
+			err := c.cnn.WebsocketWriter(ctx, message.Type(), message.Bytes())
 			if err != nil {
-				c.cnn.OnError(errs.New("error when writing:%w , data:%v , message type: %v", err, message.Data(), message.Type()))
+				c.cnn.OnError(errs.New("error when writing:%w , data:%v , message type: %v", err, message.Bytes(), message.Type()))
 				continue
 			}
 		}
