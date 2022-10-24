@@ -1,18 +1,19 @@
-package cache_locker
+package locker
 
 import (
 	"sync"
 	"sync/atomic"
 )
 
-type CacheLocker[T any] interface {
+type ObjectLocker[T any] interface {
 	Load() (t *T, release func())
+	Store(T)
 	Do(func(t *T))
 	Freeze() (t *T, release func())
 	UserCount() uint64
 }
 
-func NewCache[T any](t *T) CacheLocker[T] {
+func NewObjectLocker[T any](t *T) ObjectLocker[T] {
 	return &cacheLocker[T]{t: t}
 }
 
@@ -25,7 +26,11 @@ type cacheLocker[T any] struct {
 func (c *cacheLocker[T]) UserCount() uint64 {
 	return c.tUserCount
 }
-
+func (c *cacheLocker[T]) Store(t T) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+	*c.t = t
+}
 func (c *cacheLocker[T]) Load() (t *T, release func()) {
 	c.lock.RLock()
 	atomic.AddUint64(&c.tUserCount, 1)

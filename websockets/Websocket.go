@@ -245,7 +245,6 @@ func (c *connectionKeeper) dispatchPump(ctx contexts.ContextGroup) {
 				}
 			}
 			ok()
-			fmt.Println("dispatchPump done")
 			return
 		case message := <-c.incomeQueue:
 			c.cnn.Dispatcher(ctx, message)

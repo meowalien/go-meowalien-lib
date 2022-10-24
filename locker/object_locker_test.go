@@ -1,4 +1,4 @@
-package cache_locker
+package locker
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 
 func TestCacheLocker(t *testing.T) {
 	var x int
-	ch := NewCache(&x)
+	ch := NewObjectLocker(&x)
 	wg := sync.WaitGroup{}
 
 	for i := 0; i < 10000; i++ {
