@@ -25,8 +25,8 @@ func (r *RetryWrapper) Transaction(ctx context.Context, action string, options *
 		}
 		return false
 	})
-	if errRetry != nil {
-		err = errs.New(err, errRetry)
+	if !errRetry {
+		err = errs.New("not done")
 		return
 	} else {
 		err = nil

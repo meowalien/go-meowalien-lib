@@ -30,8 +30,8 @@ func TestRetryErr(t *testing.T) {
 		err = errs.New(err, fmt.Errorf("error %d", round))
 		return true
 	})
-	if errRetry != nil {
-		err = errs.New(err, errRetry)
+	if !errRetry {
+		err = errs.New("not done")
 
 	} else {
 		err = nil

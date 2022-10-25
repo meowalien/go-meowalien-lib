@@ -27,7 +27,7 @@ func TestWebsocket(t *testing.T) {
 	fmt.Println("resp: ", resp)
 
 	keeper := NewConnectionKeeper(ConnectionAdapter{
-		OnError: func(keeper WebsocketMessageQueuer, err error) {
+		OnError: func(err error) {
 			fmt.Println("OnError: ", err)
 		},
 		Dispatcher: func(ctx context.Context, msg Message) {
@@ -58,7 +58,7 @@ func TestWebsocket(t *testing.T) {
 		defer wg.Done()
 		ticker := time.NewTicker(time.Second * 1)
 		for range ticker.C {
-			err = keeper.SendMessage(context.Background(), NewTextMessage(keeper, "hello"))
+			err = keeper.SendMessage(context.Background(), NewTextMessage("hello"))
 			if err != nil {
 				err = errs.New(err)
 				panic(err)
@@ -101,17 +101,17 @@ func startServer(wg *sync.WaitGroup) {
 
 func newAdapter(conn *websocket.Conn) ConnectionAdapter {
 	return ConnectionAdapter{
-		OnError: func(keeper WebsocketMessageQueuer, err error) {
+		OnError: func(err error) {
 			fmt.Println("OnError-server: ", err)
 		},
 		Dispatcher: func(ctx context.Context, msg Message) {
 			fmt.Println("Dispatch-server: ", msg)
-			err := msg.ReplyText(ctx, "hello-server")
-			//err := keeper.SendMessage(ctx, NewTextMessage(keeper, "hello-server"))
-			if err != nil {
-				err = errs.New(err)
-				panic(err)
-			}
+			//err := msg.ReplyText(ctx, "hello-server")
+			////err := keeper.SendMessage(ctx, NewTextMessage(keeper, "hello-server"))
+			//if err != nil {
+			//	err = errs.New(err)
+			//	panic(err)
+			//}
 		},
 		WebsocketReader: func(ctx context.Context) (msgType MessageType, data []byte, err error) {
 			msgTypeRaw, data, err := conn.Read(ctx)
