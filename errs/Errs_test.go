@@ -3,8 +3,8 @@ package errs
 import (
 	"errors"
 	"fmt"
+	"github.com/meowalien/go-meowalien-lib/bitmask"
 	"github.com/stretchr/testify/assert"
-	"gitlab.geax.io/demeter/backendmodules/bitmask"
 	"testing"
 )
 

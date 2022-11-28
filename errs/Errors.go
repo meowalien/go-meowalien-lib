@@ -1,7 +1,7 @@
 package errs
 
 import (
-	"gitlab.geax.io/demeter/backendmodules/runtime"
+	"github.com/meowalien/go-meowalien-lib/runtime"
 )
 
 /*

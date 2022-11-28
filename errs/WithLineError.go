@@ -3,7 +3,7 @@ package errs
 import (
 	"errors"
 	"fmt"
-	"gitlab.geax.io/demeter/backendmodules/bitmask"
+	"github.com/meowalien/go-meowalien-lib/bitmask"
 	"strings"
 )
 
