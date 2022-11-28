@@ -7,14 +7,14 @@ import (
 	"strings"
 )
 
-func newWithLineErrorFromAny(deliver bool, err any, caller string, obj ...any) *withLineError {
+func newWithLineErrorFromAny(deliverMode bool, caller string, err any, obj ...any) *withLineError {
 	if err == nil || err == (*withLineError)(nil) {
 		if len(obj) == 0 {
 			return nil
 		} else if len(obj) == 1 {
-			return newWithLineErrorFromAny(deliver, obj[0], caller)
+			return newWithLineErrorFromAny(deliverMode, caller, obj[0])
 		} else {
-			return newWithLineErrorFromAny(deliver, obj[0], caller, obj[1:]...)
+			return newWithLineErrorFromAny(deliverMode, caller, obj[0], obj[1:]...)
 		}
 	}
 	switch errTp := err.(type) {
@@ -27,19 +27,35 @@ func newWithLineErrorFromAny(deliver bool, err any, caller string, obj ...any) *
 	case error:
 		var parentErr *withLineError
 		parentErr, ok := errTp.(*withLineError) //nolint:errorlint
-		if !ok {
+		if ok {
+			if deliverMode {
+				parentErr = parentErr.deliver(caller)
+			}
+		} else {
 			parentErr = newWithLineErrorFromError(errTp, caller)
-		} else if deliver {
-			parentErr = parentErr.deliver(caller)
 		}
 
-		for _, a := range obj {
-			if a == nil {
-				continue
-			}
-			parentErr = parentErr.wrap(a, caller)
+		if len(obj) == 0 {
+			return parentErr
 		}
-		return parentErr
+
+		var toWrapErr error
+
+		switch obj0 := obj[0].(type) {
+		case error:
+			toWrapErr = errors.New(fmt.Sprint(obj...))
+			return parentErr.wrap(toWrapErr, "")
+
+		case string:
+			if strings.Contains(obj0, "%") {
+				toWrapErr = fmt.Errorf(obj0, obj[1:]...)
+			} else {
+				toWrapErr = errors.New(fmt.Sprint(obj...))
+			}
+
+		}
+
+		return parentErr.wrap(toWrapErr, caller)
 	default:
 		return newWithLineErrorFromError(errors.New(fmt.Sprint(append([]any{errTp}, obj...)...)), caller)
 	}
@@ -78,10 +94,9 @@ func (w *withLineError) HasCode(code bitmask.Bitmask) bool {
 
 func (w withLineError) WithCode(code bitmask.Bitmask) WithLineError {
 	if code == nil {
-		panic("using nil or 0 as error code")
+		w.errorCode = nil
+		return &w
 	}
-	//fmt.Println("w.errorCode : ", w.errorCode)
-	//fmt.Println("code : ", code)
 	if w.errorCode == nil {
 		w.errorCode = code
 	} else {
@@ -115,7 +130,11 @@ func (w *withLineError) Unwrap() error {
 
 func (w *withLineError) Error() (s string) {
 	tabs := strings.Repeat("\t", w.layer)
-	s = fmt.Sprintf("%s%s: %s", tabs, w.caller, w.error.Error())
+	if w.caller == "" {
+		s = fmt.Sprintf("%s%s", tabs, w.error.Error())
+	} else {
+		s = fmt.Sprintf("%s%s: %s", tabs, w.caller, w.error.Error())
+	}
 	if w.parent == nil {
 		return
 	} else {
@@ -123,8 +142,8 @@ func (w *withLineError) Error() (s string) {
 	}
 }
 
-func (w *withLineError) wrap(a any, caller string) (res *withLineError) {
-	ne := newWithLineErrorFromAny(false, a, caller)
+func (w *withLineError) wrap(a error, caller string) (res *withLineError) {
+	ne := newWithLineErrorFromAny(false, caller, a)
 	ne.layer = w.layer + 1
 	ne.parent = w
 	return ne
@@ -147,7 +166,7 @@ func (w *withLineError) formatChild(childErrStr string) (res string) {
 }
 
 func (w withLineError) deliver(caller string) *withLineError {
-	w.caller = fmt.Sprintf("%s => %s", w.caller, caller)
+	w.caller = fmt.Sprintf("%s <= %s", w.caller, caller)
 	x := w
 	return &x
 }

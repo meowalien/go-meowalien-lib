@@ -13,7 +13,7 @@ New Usage:
 	New(error) make a withLineError of error
 */
 var New = func(err any, obj ...any) WithLineError {
-	ee := newWithLineErrorFromAny(true, err, runtime.Caller(1, runtime.CALLER_FORMAT_SHORT), obj...)
+	ee := newWithLineErrorFromAny(true, runtime.Caller(1, runtime.CALLER_FORMAT_SHORT), err, obj...)
 	// to make sure that the returned error is nil type and nil value
 	if ee == nil {
 		return nil

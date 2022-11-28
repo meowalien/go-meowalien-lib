@@ -8,14 +8,22 @@ import (
 	"testing"
 )
 
-func TestWithLine_two_errors(t *testing.T) {
+func TestWithLine_errors(t *testing.T) {
 	err1 := errors.New("Error 1")
 	err2 := errors.New("Error 2")
 	err4 := errors.New("Error 4")
 	err5 := errors.New("Error 5")
 	err3 := New(err1, err2, err4, err5)
 	fmt.Println(err3)
-	//assert.EqualError(t, err3, "errs/Errs_test.go:13: { \n\tError 1\n\t=> Error 2 \n}")
+}
+func TestWithLine_new(t *testing.T) {
+	err2 := New("Error 2")
+	err4 := New("Error 4")
+	err5 := New("Error 5")
+
+	err1 := New("Error 1")
+	err3 := New(err1, err2, err4, err5)
+	fmt.Println(err3)
 }
 
 func TestWithLine_one_with_line_one_plain_error(t *testing.T) {
@@ -23,6 +31,8 @@ func TestWithLine_one_with_line_one_plain_error(t *testing.T) {
 	err2 := New("Error 2")
 	err3 := New(err1, err2)
 	fmt.Println(err3)
+	fmt.Println(err1)
+	fmt.Println(err2)
 
 	//assert.EqualError(t, err3, "errs/Errs_test.go:21: { \n\tError 1\n\t=> errs/Errs_test.go:20: Error 2 \n}")
 }
@@ -34,31 +44,23 @@ func TestWithLine_with_string(t *testing.T) {
 }
 
 func TestWithLine_with_strings(t *testing.T) {
-	err3 := New("Error 1 %s", "some string")
+	err3 := New("Error 1 { %s }", "some string")
 	fmt.Println(err3)
 	//assert.EqualError(t, err3, "errs/Errs_test.go:34: Error 1 some string")
-}
-
-func TestWithLine_with_stringf(t *testing.T) {
-	err3 := New("Error {%s} 1", "some string")
-	fmt.Println(err3)
-	//assert.EqualError(t, err3, "errs/Errs_test.go:40: Error {some string} 1")
 }
 
 func TestWithLineError_Wrap(t *testing.T) {
 	err1 := New("Error 1")
 	err2 := New("Error 2")
 	err3 := New(err1, err2)
+	fmt.Println("err3: ", err3)
+
 	errx := New("Error 4")
 	err4 := New(err3, errx)
 
-	fmt.Println(err4)
-	//fmt.Println(err3)
+	fmt.Println("err4: ", err4)
 	err := errors.Unwrap(err4)
 	fmt.Println("err1: ", err)
-	//if err != nil {
-	//	assert.EqualError(t, err, "{ \n\terrs/Errs_test.go:46: Error 1\n\t=> errs/Errs_test.go:47: Error 2 \n}")
-	//}
 	err = errors.Unwrap(err)
 	fmt.Println("err2: ", err)
 
@@ -203,4 +205,18 @@ func TestErrCode2(t *testing.T) {
 	assert.True(t, errors.Is(err0, err0))
 	assert.False(t, err0.HasCode(A))
 	assert.False(t, err0.HasCode(B))
+}
+
+func TestErrWrap(t *testing.T) {
+	a := New("Error 1")
+	b := New(a, "Error { %s } 2", "Error 2-1")
+	c := New(b, "Error 3")
+	fmt.Println(c)
+}
+
+func TestPassOnly(t *testing.T) {
+	a := New("Error 1")
+	b := New(a)
+	c := New(b)
+	fmt.Println(c)
 }
