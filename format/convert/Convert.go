@@ -18,12 +18,12 @@ func ConvertMapToURLForm(postMap map[string]interface{}) url.Values {
 	}
 	return form
 }
-func MapstructureOnJsonTag(input interface{}, i interface{}) (err error) {
-	return MapstructureOnTag(input, "json", i)
+func MapstructureOnJsonTag(input interface{}, obj interface{}) (err error) {
+	return MapstructureOnTag(input, "json", obj)
 }
 
-func MapstructureOnFormTag(input interface{}, i interface{}) (err error) {
-	return MapstructureOnTag(input, "form", i)
+func MapstructureOnFormTag(input interface{}, obj interface{}) (err error) {
+	return MapstructureOnTag(input, "form", obj)
 }
 
 func MapstructureOnTag(input interface{}, tag string, i interface{}) (err error) {

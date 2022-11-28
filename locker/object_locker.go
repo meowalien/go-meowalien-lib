@@ -14,6 +14,10 @@ type ObjectLocker[T any] interface {
 }
 
 func NewObjectLocker[T any](t *T) ObjectLocker[T] {
+	if t == nil {
+		var tt T
+		t = &tt
+	}
 	return &cacheLocker[T]{t: t}
 }
 

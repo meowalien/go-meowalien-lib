@@ -3,6 +3,8 @@ package errs
 import (
 	"errors"
 	"fmt"
+	"github.com/stretchr/testify/assert"
+	"gitlab.geax.io/demeter/backendmodules/bitmask"
 	"testing"
 )
 
@@ -95,10 +97,6 @@ func TestWithLine_nil_parent_case(t *testing.T) {
 
 func TestWithLine_defer(t *testing.T) {
 	err := testFunc()
-	if err != nil {
-		err = New(err)
-		return
-	}
 	fmt.Println(err)
 	//assert.EqualError(t, err3, "errs/Errs_test.go:97: { \n\terrs/Errs_test.go:99: Error 1\n\t=> errs/Errs_test.go:96: Error 2 \n}")
 
@@ -132,7 +130,7 @@ func testFuncnil() (err error) {
 
 func TestErrorAndNil(t *testing.T) {
 	var err2 error
-	err1 := errors.New("Error 1")
+	err1 := New("Error 1")
 	err3 := New(err1, err2)
 	fmt.Println(err3)
 	//assert.EqualError(t, err3, "errs/Errs_test.go:105: Error 1")
@@ -168,4 +166,41 @@ func TestFF(t *testing.T) {
 		fmt.Println(err)
 		return
 	}
+}
+
+const (
+	_ bitmask.OffsetBitmask = iota
+	A
+	B
+	D
+	E
+)
+
+func TestErrCode(t *testing.T) {
+	err1 := New("Error 1").WithCode(A)
+	err2 := New("Error 2").WithCode(B)
+	fmt.Println(err1.HasCode(A))
+	fmt.Println(err2.HasCode(A))
+}
+
+func TestErrCode1(t *testing.T) {
+	err1 := New("Error 1").WithCode(A)
+	err2 := New("Error 2").WithCode(B).WithCode(A)
+	fmt.Println(err1.HasCode(A))
+	fmt.Println(err2.HasCode(A))
+}
+
+func TestErrCode2(t *testing.T) {
+	err0 := New("Error 0")
+	err1 := New("Error 1").WithCode(A).WithCode(B)
+	err2 := New("Error 2").WithCode(A)
+
+	assert.True(t, errors.Is(err1, err2))
+	assert.True(t, err1.HasCode(A))
+	assert.True(t, err1.Is(err2))
+
+	assert.False(t, errors.Is(err0, err2))
+	assert.True(t, errors.Is(err0, err0))
+	assert.False(t, err0.HasCode(A))
+	assert.False(t, err0.HasCode(B))
 }
