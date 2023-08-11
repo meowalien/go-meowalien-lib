@@ -1,25 +1,20 @@
 package hash
 
 import (
-	"bytes"
+	"encoding/base64"
 	"encoding/gob"
 	"hash/fnv"
 )
 
-func FastHash[T any](data T) (uint64, error) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
+func FastHash[T any](data T) (string, error) {
+	h := fnv.New64a()
 
+	enc := gob.NewEncoder(h)
 	err := enc.Encode(data)
 	if err != nil {
-		return 0, err
+		return "", err
 	}
 
-	h := fnv.New64a()
-	_, err = h.Write(buf.Bytes())
-	if err != nil {
-		return 0, err
-	}
-
-	return h.Sum64(), nil
+	hashBytes := h.Sum(nil)
+	return base64.URLEncoding.EncodeToString(hashBytes), nil
 }
